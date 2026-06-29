@@ -1,0 +1,38 @@
+# =========================================================================
+# Qwen3.6-35B-A3B & Ornith-1.0-35B Local Inference Deployment Gitignore
+# =========================================================================
+
+# Large Model Weights (GGUF)
+*.gguf
+models/*.gguf
+models/**/*.gguf
+
+# Prebuilt Binaries & Libraries (Keep repository slim, users download llama.cpp themselves)
+bin/
+*.exe
+*.dll
+
+# Temporary Logs & Debug outputs
+*.log
+scratch/llama-server-tune-temp.log
+
+# Python Runtime & Caches
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Python Virtual Environments
+**/venv/
+**/.venv/
+
+# Local IDE & OS specific files
+.vscode/
+.idea/
+.DS_Store
+**/Thumbs.db
+**/desktop.ini
+.antigravitycli/
+

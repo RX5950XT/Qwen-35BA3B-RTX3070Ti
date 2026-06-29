@@ -1,0 +1,4522 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen3.6-35B-A3B × RTX 3070 Ti 互動式部署儀表板與術語百科</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', 'Inter', 'Noto Sans TC', sans-serif;
+            letter-spacing: -0.03em;
+        }
+    
+        /* ===== UNIFIED VARIABLES & CORE ===== */
+        :root {
+            --bg-primary: #030303;
+            --bg-secondary: #080808;
+            --bg-card: rgba(12, 12, 18, 0.85);
+            --bg-card-hover: rgba(22, 22, 30, 0.95);
+            --accent-indigo: #0ea5e9;
+            --accent-violet: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --accent-sky: #0ea5e9;
+            --accent-lime: #84cc16;
+            --accent-pink: #06b6d4;
+            --text-primary: #e8e8ef;
+            --text-secondary: #9b9bb5;
+            --text-muted: #5e5e7a;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-color-hover: rgba(255, 255, 255, 0.15);
+            --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);
+            --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #f43f5e 100%);
+            --gradient-cool: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+            --gradient-hero: linear-gradient(180deg, rgba(14, 165, 233, 0.15) 0%, rgba(10, 10, 15, 0) 100%);
+            --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.15);
+            --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --radius-xl: 1rem;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-indigo) var(--bg-secondary);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-indigo); border-radius: 3px; }
+
+        /* ===== BACKGROUND EFFECTS ===== */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-orb-1 { width: 600px; height: 600px; background: rgba(14, 165, 233, 0.08); top: -200px; left: -200px; }
+        .bg-orb-2 { width: 500px; height: 500px; background: rgba(6, 182, 212, 0.012); bottom: 10%; right: -150px; animation-delay: -7s; }
+        .bg-orb-3 { width: 400px; height: 400px; background: rgba(16, 185, 129, 0.05); top: 40%; left: 30%; animation-delay: -14s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        /* ===== UNIFIED NAV ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            backdrop-filter: blur(20px) saturate(1.5);
+            background: rgba(10, 10, 15, 0.8);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-brand {
+            font-weight: 900;
+            font-size: 1.15rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.25rem;
+            border-radius: 100px;
+            border: 1px solid var(--border-subtle);
+        }
+        .nav-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 0.4rem 1.1rem;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+        }
+        .nav-tab:hover {
+            color: var(--text-primary);
+        }
+        .nav-tab.active {
+            color: var(--text-primary);
+            background: var(--accent-indigo);
+            box-shadow: 0 2px 10px rgba(14, 165, 233, 0.3);
+        }
+
+        .nav-back {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            padding: 0.4rem 0.9rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+            transition: all 0.2s;
+        }
+        .nav-back:hover {
+            border-color: var(--border-glow);
+            color: var(--text-primary);
+        }
+
+        /* ===== TAB CONTENT SYSTEM ===== */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ===== IMPORTED PLAN STYLE ===== */
+        
+        
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-indigo) var(--bg-secondary);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-indigo); border-radius: 3px; }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ===== HERO ===== */
+        .plan-hero {
+            padding: 8rem 0 4rem;
+            text-align: center;
+        }
+        .plan-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.25);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-indigo);
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.05em;
+        }
+        .plan-hero-badge::before { content: '⚡'; }
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4.2rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+        }
+        .hero h1 .gradient-text {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .plan-hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 720px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.8;
+        }
+
+        /* ===== STATS ROW ===== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 4rem;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+        .stat-value.indigo { color: var(--accent-indigo); }
+        .stat-value.cyan { color: var(--accent-cyan); }
+        .stat-value.emerald { color: var(--accent-emerald); }
+        .stat-value.amber { color: var(--accent-amber); }
+        .stat-value.violet { color: var(--accent-violet); }
+        .stat-value.rose { color: var(--accent-rose); }
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ===== SECTION ===== */
+        .section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 80px;
+        }
+        .section-header {
+            margin-bottom: 2rem;
+        }
+        .section-number {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-indigo);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+        }
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+        .section-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 700px;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+        .card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        /* ===== ARCHITECTURE DIAGRAM ===== */
+        .arch-diagram {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
+            overflow-x: auto;
+        }
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+        .arch-block {
+            padding: 0.8rem 1.2rem;
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 110px;
+            position: relative;
+        }
+        .arch-block.gpu {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(16, 185, 129, 0.2));
+            border: 1px solid rgba(14, 165, 233, 0.4);
+            color: #a5b4fc;
+        }
+        .arch-block.cpu {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(16, 185, 129, 0.15));
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #67e8f9;
+        }
+        .arch-block.storage {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(249, 115, 22, 0.15));
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fcd34d;
+        }
+        .arch-arrow {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+        .arch-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        /* ===== MEMORY BAR ===== */
+        .mem-bar-container {
+            margin: 1.5rem 0;
+        }
+        .mem-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.4rem;
+        }
+        .mem-bar-label span:first-child { font-weight: 600; }
+        .mem-bar-label span:last-child { color: var(--text-muted); }
+        .mem-bar {
+            height: 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            position: relative;
+            border: 1px solid var(--border-subtle);
+        }
+        .mem-bar-segment {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== TABLE ===== */
+        .data-table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .data-table thead {
+            background: rgba(14, 165, 233, 0.08);
+        }
+        .data-table th {
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+        .data-table tbody tr {
+            transition: background 0.2s;
+        }
+        .data-table tbody tr:hover {
+            background: rgba(14, 165, 233, 0.04);
+        }
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table .highlight-row {
+            background: rgba(14, 165, 233, 0.06);
+        }
+        .data-table .highlight-row td {
+            font-weight: 600;
+        }
+
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-yellow { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-red { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+        .badge-blue { background: rgba(14, 165, 233, 0.15); color: #a5b4fc; border: 1px solid rgba(14, 165, 233, 0.3); }
+        .badge-cyan { background: rgba(6, 182, 212, 0.15); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.3); }
+
+        /* ===== CODE BLOCK ===== */
+        .code-block {
+            background: #0d0d14;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+        .code-block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .code-block-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .code-block-copy {
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            color: var(--accent-indigo);
+            padding: 0.3rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .code-block-copy:hover {
+            background: rgba(14, 165, 233, 0.2);
+        }
+        .code-block pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: #e2e8f0;
+            white-space: pre;
+        }
+        .code-block .comment { color: #6b7280; }
+        .code-block .flag { color: #67e8f9; }
+        .code-block .value { color: #fbbf24; }
+        .code-block .string { color: #34d399; }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent-indigo), var(--accent-cyan), var(--accent-emerald));
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 1.5rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 0.4rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-indigo);
+            border: 3px solid var(--bg-primary);
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .timeline-phase {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--accent-indigo);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.2rem;
+        }
+        .timeline-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        .timeline-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== LAYER VISUAL ===== */
+        .layer-visual {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-md);
+        }
+        .layer-block {
+            width: 28px;
+            height: 36px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.8);
+            position: relative;
+            cursor: default;
+            transition: transform 0.2s;
+        }
+        .layer-block:hover {
+            transform: scale(1.3);
+            z-index: 5;
+        }
+        .layer-block.deltanet {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(16, 185, 129, 0.3));
+            border: 1px solid rgba(6, 182, 212, 0.5);
+        }
+        .layer-block.gated-attn {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.5), rgba(16, 185, 129, 0.4));
+            border: 1px solid rgba(14, 165, 233, 0.6);
+        }
+
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.78rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        .legend-dot.dn {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.6), rgba(16, 185, 129, 0.4));
+        }
+        .legend-dot.ga {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.7), rgba(16, 185, 129, 0.5));
+        }
+
+        /* ===== INFO BOX ===== */
+        .info-box {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            margin: 1rem 0;
+            font-size: 0.88rem;
+            line-height: 1.7;
+        }
+        .info-box.tip {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #a7f3d0;
+        }
+        .info-box.warn {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            color: #fde68a;
+        }
+        .info-box.critical {
+            background: rgba(244, 63, 94, 0.08);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            color: #fda4af;
+        }
+        .info-box.info {
+            background: rgba(14, 165, 233, 0.08);
+            border: 1px solid rgba(14, 165, 233, 0.25);
+            color: #c7d2fe;
+        }
+        .info-box strong {
+            font-weight: 700;
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0;
+        }
+        .tab-btn {
+            padding: 0.6rem 1.2rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .tab-btn:hover { color: var(--text-secondary); }
+        .tab-btn.active {
+            color: var(--accent-indigo);
+            border-bottom-color: var(--accent-indigo);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ===== PERF CHART ===== */
+        .perf-bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+        .perf-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .perf-bar-label {
+            min-width: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+        .perf-bar-track {
+            flex: 1;
+            height: 28px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-subtle);
+        }
+        .perf-bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            padding-left: 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== FORMULA ===== */
+        .formula-box {
+            background: #0d0d14;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+            margin: 1rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            overflow-x: auto;
+            text-align: center;
+        }
+        .formula-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.4rem;
+            text-align: left;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 3rem 0;
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 4rem;
+        }
+        .footer-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .main-content { padding: 0 1rem; }
+            .hero h1 { font-size: 2rem; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .card-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            .arch-flow { flex-direction: column; }
+        }
+
+        /* ===== ANIMATIONS ===== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        /* ===== PULSE ===== */
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            display: inline-block;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        }
+
+        /* ===== CHECKLIST ===== */
+        .checklist { list-style: none; padding: 0; }
+        .checklist li {
+            padding: 0.4rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .checklist li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent-emerald);
+            font-weight: 700;
+        }
+
+        /* ===== COLLAPSIBLE ===== */
+        .collapsible-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+        .collapsible-header:hover {
+            border-color: var(--border-glow);
+        }
+        .collapsible-header h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .collapsible-arrow {
+            transition: transform 0.3s;
+            color: var(--text-muted);
+        }
+        .collapsible-header.open .collapsible-arrow {
+            transform: rotate(180deg);
+        }
+        .collapsible-body {
+            display: none;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-top: none;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            margin-top: -0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .collapsible-body.open { display: block; }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+    
+
+        /* ===== IMPORTED GLOSSARY STYLE ===== */
+        
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--accent-indigo) var(--bg-secondary); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-indigo); border-radius: 3px; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7; letter-spacing: -0.01em;
+            overflow-x: hidden;
+        }
+
+        /* SEARCH */
+        .search-bar {
+            position: sticky; top: 60px; z-index: 90;
+            backdrop-filter: blur(16px); background: rgba(10,10,15,0.75);
+            padding: 0.8rem 0; border-bottom: 1px solid var(--border-subtle);
+        }
+        .search-inner { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+        .search-input {
+            width: 100%; padding: 0.7rem 1.2rem; padding-left: 2.8rem;
+            border-radius: 100px; border: 1px solid var(--border-subtle);
+            background: rgba(255,255,255,0.04); color: var(--text-primary);
+            font-size: 0.92rem; font-family: inherit; outline: none; transition: all 0.2s;
+        }
+        .search-input:focus { border-color: var(--accent-indigo); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-wrap { position: relative; }
+        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1rem; pointer-events: none; }
+
+        /* MAIN */
+        .main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+        /* HERO */
+        .glossary-hero { padding: 7.5rem 0 2rem; text-align: center; }
+        .glossary-hero h1 { font-family: 'Outfit', sans-serif; font-size: clamp(2rem,4.5vw,3.2rem); font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.6rem; line-height: 1.2; }
+        .glossary-hero h1 .glow { background: linear-gradient(135deg,#0ea5e9,#10b981,#06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glossary-hero-sub { color: var(--text-secondary); font-size: 1.05rem; max-width: 640px; margin: 0 auto; }
+
+        /* CATEGORY JUMP */
+        .cat-jump {
+            display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center;
+            margin: 2rem 0 3rem; padding: 0;
+        }
+        .cat-pill {
+            padding: 0.35rem 0.9rem; border-radius: 100px; font-size: 0.78rem; font-weight: 600;
+            border: 1px solid var(--border-subtle); background: rgba(255,255,255,0.03);
+            color: var(--text-secondary); cursor: pointer; transition: all 0.2s; text-decoration: none;
+        }
+        .cat-pill:hover { border-color: var(--border-glow); color: var(--text-primary); background: rgba(99,102,241,0.08); }
+
+        /* CATEGORY SECTION */
+        .cat-section { margin-bottom: 3.5rem; scroll-margin-top: 140px; }
+        .cat-header {
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-bottom: 1.2rem; padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .cat-icon { font-size: 1.4rem; }
+        .cat-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; }
+        .cat-count { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 100px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); }
+
+        /* TERM CARD */
+        .term-card {
+            background: var(--bg-card); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg); padding: 1.4rem 1.6rem;
+            margin-bottom: 0.8rem; backdrop-filter: blur(8px);
+            transition: all 0.25s;
+        }
+        .term-card:hover { border-color: var(--border-glow); box-shadow: 0 0 30px rgba(99,102,241,0.08); }
+        .term-card.hidden { display: none; }
+
+        .term-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .term-name-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+        .term-en {
+            font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 700;
+            color: var(--accent-indigo); letter-spacing: -0.01em;
+        }
+        .term-zh { font-size: 0.88rem; font-weight: 600; color: var(--accent-cyan); }
+        .term-tag {
+            font-size: 0.65rem; font-weight: 700; padding: 0.12rem 0.5rem; border-radius: 100px;
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .tag-arch { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.3); }
+        .tag-hw   { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+        .tag-quant { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+        .tag-param { background: rgba(6,182,212,0.15); color: #67e8f9; border: 1px solid rgba(6,182,212,0.3); }
+        .tag-perf { background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid rgba(244,63,94,0.3); }
+        .tag-build { background: rgba(249,115,22,0.15); color: #fdba74; border: 1px solid rgba(249,115,22,0.3); }
+        .tag-mem  { background: rgba(56,189,248,0.15); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.3); }
+        .tag-sample { background: rgba(236,72,153,0.15); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.3); }
+
+        .term-body { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; letter-spacing: -0.01em; }
+        .term-body strong { color: var(--text-primary); font-weight: 600; }
+        .term-body code {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+            background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+            padding: 0.1rem 0.4rem; border-radius: 4px; color: #a5b4fc;
+        }
+
+        .analogy {
+            margin-top: 0.6rem; padding: 0.65rem 1rem; border-radius: var(--radius-sm);
+            background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.18);
+            font-size: 0.85rem; color: #fde68a; line-height: 1.7;
+        }
+        .analogy::before { content: '💡 白話比喻：'; font-weight: 700; }
+
+        .diagram-box {
+            margin-top: 0.7rem; padding: 0.8rem 1rem; border-radius: var(--radius-sm);
+            background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: #94a3b8;
+            overflow-x: auto; white-space: pre; line-height: 1.6;
+        }
+
+        .term-related {
+            margin-top: 0.5rem; font-size: 0.78rem; color: var(--text-muted);
+        }
+        .term-related a {
+            color: var(--accent-indigo); text-decoration: none; font-weight: 500;
+        }
+        .term-related a:hover { text-decoration: underline; }
+
+        /* FOOTER */
+        .footer { text-align: center; padding: 3rem 0; border-top: 1px solid var(--border-subtle); margin-top: 3rem; }
+        .footer-text { font-size: 0.78rem; color: var(--text-muted); }
+
+        /* RESPONSIVE */
+        @media (max-width: 640px) {
+            .main { padding: 0 1rem; }
+            .glossary-hero h1 { font-size: 1.8rem; }
+            .term-head { flex-direction: column; }
+        }
+    
+        
+        /* Specific tweaks for integration */
+        .plan-hero {
+            padding: 8rem 0 3rem;
+            text-align: center;
+        }
+        .glossary-hero {
+            padding: 8rem 0 2rem;
+            text-align: center;
+        }
+        
+        /* Sticky search bar position tweak */
+        #glossary-tab .search-bar {
+            position: sticky;
+            top: 64px;
+            z-index: 90;
+            backdrop-filter: blur(16px);
+            background: rgba(10, 10, 15, 0.85);
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+    
+        /* ===== DIAGNOSTIC TAB STYLES ===== */
+        .formula-box {
+            background: rgba(14, 165, 233, 0.05);
+            border: 1px dashed rgba(14, 165, 233, 0.3);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            text-align: center;
+            margin: 1rem 0;
+            color: var(--accent-cyan);
+            overflow-x: auto;
+        }
+        .progress-container {
+            margin-top: 1.5rem;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        .progress-bar-wrap {
+            background: rgba(255, 255, 255, 0.05);
+            height: 8px;
+            border-radius: 100px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 100px;
+        }
+        .badge-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .badge-rose {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fda4af;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+        .badge-emerald {
+            background: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .bar-chart-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .bar-chart-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .bar-label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        .bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .bar-fill {
+            height: 20px;
+            border-radius: 4px;
+            transition: width 1s ease-in-out;
+        }
+        .bar-value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .formula-box img {
+            max-width: 100%;
+        }
+    
+    
+        .stat-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            line-height: 1.4;
+        }</style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Unified Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+
+    <!-- Unified Nav -->
+    <nav class="nav">
+        <div class="nav-inner">
+            <div class="nav-brand">Qwen3.6-35B-A3B × 3070 Ti 儀表板</div>
+            <div class="nav-tabs">
+                <button id="tab-btn-plan" class="nav-tab active" onclick="switchMainTab('plan')">⚡ 部署計畫 & 數據流</button>
+                <button id="tab-btn-diagnostic" class="nav-tab" onclick="switchMainTab('diagnostic')">🛠️ 底層優化與物理診斷</button>
+                <button id="tab-btn-glossary" class="nav-tab" onclick="switchMainTab('glossary')">📚 術語百科名詞解釋</button>
+                <button id="tab-btn-report" class="nav-tab" onclick="switchMainTab('report')">📊 效能實驗與往復尋優</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tab 1: Deployment Plan -->
+    <div id="plan-tab" class="tab-content active">
+        
+
+
+
+
+
+
+<!-- NAV -->
+
+
+<div class="main-content">
+
+    <!-- HERO -->
+    <section class="hero fade-in">
+        <div class="plan-hero-badge">登峰造極部署計畫</div>
+        <h1>
+            <span class="gradient-text">Qwen3.6-35B-A3B</span><br>
+            極限部署指南
+        </h1>
+        <p class="plan-hero-subtitle">
+            在 RTX 3070 Ti（8GB VRAM）+ 64GB 系統記憶體的環境下，<br>
+            透過 llama.cpp 的極致參數調校，挑戰消費級硬體的物理極限。
+        </p>
+    </section>
+
+    <!-- KEY STATS -->
+    <div class="stats-row fade-in delay-1">
+        <div class="stat-card">
+            <div class="stat-value indigo">35B</div>
+            <div class="stat-label">總參數量</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value cyan">3B</div>
+            <div class="stat-label">每 Token 啟用參數</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value emerald">8 GB</div>
+            <div class="stat-label">GPU VRAM</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value amber">72 GB</div>
+            <div class="stat-label">系統記憶體</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value violet">262K</div>
+            <div class="stat-label">原生上下文</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value rose">256</div>
+            <div class="stat-label">每層 Expert 數量</div>
+        </div>
+    </div>
+
+    <!-- ==================== SECTION 1: MODEL ARCHITECTURE ==================== -->
+    <section class="section fade-in" id="arch">
+        <div class="section-header">
+            <div class="section-number">Section 01</div>
+            <h2 class="section-title">🏗️ 模型架構深度解析</h2>
+            <p class="section-desc">理解 Qwen3.6-35B-A3B 的 Hybrid MoE 架構，是所有優化策略的基礎。</p>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-title">📐 Hybrid 混合注意力架構</div>
+            <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1rem;">
+                模型由 10 個循環組成，每循環包含 3 層 <strong style="color:#67e8f9">Gated DeltaNet</strong>（線性注意力）+ 1 層 <strong style="color:#a5b4fc">Gated Attention</strong>（標準 GQA），共 40 層。
+            </p>
+
+            <!-- Layer visual -->
+            <div class="layer-visual" id="layerVisual"></div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot dn"></div>
+                    <span style="color: var(--text-secondary);">Gated DeltaNet（30 層）— 線性注意力，固定 State</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot ga"></div>
+                    <span style="color: var(--text-secondary);">Gated Attention（10 層）— GQA，產生 KV Cache</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box tip">
+            <strong>🎯 關鍵洞見：</strong>只有 10/40 層會產生 KV Cache！DeltaNet 使用固定大小的 recurrent state（~60 MiB），<strong>不隨 context 長度增長</strong>。這讓 262K context 在 8GB VRAM 上成為可能。
+        </div>
+
+        <div class="two-col" style="margin-top: 1.5rem;">
+            <div class="card">
+                <div class="card-title">🧠 注意力規格</div>
+                <div class="data-table-wrapper" style="margin-top: 0.5rem;">
+                    <table class="data-table">
+                        <thead><tr><th>機制</th><th>Q Heads</th><th>KV Heads</th><th>Head Dim</th></tr></thead>
+                        <tbody>
+                            <tr><td>Gated DeltaNet</td><td>16 (QK)</td><td>— (recurrent)</td><td>128</td></tr>
+                            <tr><td>DeltaNet V</td><td>32</td><td>—</td><td>128</td></tr>
+                            <tr><td><strong>Gated Attention</strong></td><td><strong>16</strong></td><td><strong>2</strong></td><td><strong>256</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">⚡ MoE 專家配置</div>
+                <div class="data-table-wrapper" style="margin-top: 0.5rem;">
+                    <table class="data-table">
+                        <thead><tr><th>參數</th><th>值</th></tr></thead>
+                        <tbody>
+                            <tr><td>每層 Expert 總數</td><td><strong>256</strong></td></tr>
+                            <tr><td>每 Token 路由 Expert</td><td><strong>8</strong></td></tr>
+                            <tr><td>共享 Expert</td><td><strong>1</strong></td></tr>
+                            <tr><td>Expert 中間維度</td><td>512</td></tr>
+                            <tr><td>Hidden Size</td><td>2,048</td></tr>
+                            <tr><td>Vocabulary</td><td>248,320</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 2: HARDWARE CONSTRAINTS ==================== -->
+    <section class="section fade-in" id="hardware">
+        <div class="section-header">
+            <div class="section-number">Section 02</div>
+            <h2 class="section-title">💻 硬體約束與異構計算架構</h2>
+            <p class="section-desc">在 8GB VRAM 的嚴格限制下，採用 GPU + CPU 異構協作模式。</p>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="arch-diagram">
+            <h3 style="text-align:center; font-size: 1rem; margin-bottom: 1.5rem; color: var(--text-secondary);">推理時資料流架構</h3>
+            <div class="arch-flow">
+                <div class="arch-block gpu">
+                    <div>🎮 RTX 3070 Ti</div>
+                    <div class="arch-label">8 GB VRAM</div>
+                </div>
+                <div class="arch-arrow">◄──►</div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.68rem; color:var(--accent-amber); font-weight:600;">PCIe 4.0 x16</div>
+                    <div style="font-size:0.6rem; color:var(--text-muted);">~25 GB/s 實際頻寬</div>
+                    <div style="font-size:0.6rem; color:var(--text-muted);">僅傳輸 Activation Vector</div>
+                </div>
+                <div class="arch-arrow">◄──►</div>
+                <div class="arch-block cpu">
+                    <div>🖥️ CPU + RAM</div>
+                    <div class="arch-label">72 GB DDR</div>
+                </div>
+                <div class="arch-arrow">◄──►</div>
+                <div class="arch-block storage">
+                    <div>💾 NVMe SSD</div>
+                    <div class="arch-label">模型檔案儲存</div>
+                </div>
+            </div>
+
+            <div class="two-col" style="margin-top: 2rem;">
+                <div>
+                    <h4 style="color: #a5b4fc; font-size: 0.88rem; margin-bottom: 0.5rem;">🟣 GPU 常駐（8 GB VRAM）</h4>
+                    <ul class="checklist">
+                        <li>Attention 密集層權重（Q4_K_M ~2-3 GB）</li>
+                        <li>Embedding / Output 層（~0.5-1 GB）</li>
+                        <li>KV Cache（Q8_0 @32K ≈ 0.32 GB）</li>
+                        <li>DeltaNet State（固定 ~60 MiB）</li>
+                        <li>熱門 Expert Cache Slots</li>
+                        <li>Activation Buffer / 計算暫存</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: #67e8f9; font-size: 0.88rem; margin-bottom: 0.5rem;">🔵 CPU RAM 處理（72 GB）</h4>
+                    <ul class="checklist">
+                        <li>MoE Expert 權重（主體 ~17-18 GB）</li>
+                        <li>路由 Expert 的 FFN 計算</li>
+                        <li>模型元資料 / Tokenizer</li>
+                        <li>長上下文 KV Cache 溢出部分</li>
+                        <li>系統預留空間（~4 GB）</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box info" style="margin-top: 1.5rem;">
+            <strong>💡 MoE 卸載的精妙之處：</strong>傳統的全局層卸載需要在 PCIe 上搬運大量權重矩陣。而 <code>--cpu-moe</code> 的核心思路是：<em>只傳輸極小的 Activation Vector（~4-16 KB/token/layer）</em>，由 CPU 在 RAM 中直接完成 Expert FFN 矩陣乘法，再將結果送回 GPU。PCIe 頻寬完全不是瓶頸。
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 3: MEMORY ALLOCATION ==================== -->
+    <section class="section fade-in" id="memory">
+        <div class="section-header">
+            <div class="section-number">Section 03</div>
+            <h2 class="section-title">📊 記憶體分配策略</h2>
+            <p class="section-desc">精確計算 VRAM 與 RAM 的每一個 byte，不浪費任何資源。</p>
+        </div>
+
+        <!-- VRAM Budget -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-title">🎮 GPU VRAM 預算（8 GB = 8,192 MB）</div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">以 Q4_K_M + --cpu-moe 全卸載 + Q8_0 KV Cache @ 32K context 為例</p>
+            
+            <div class="mem-bar-container">
+                <div class="mem-bar-label">
+                    <span>GPU VRAM 使用分佈</span>
+                    <span>已用 ~5.1 GB / 8 GB（63%）</span>
+                </div>
+                <div class="mem-bar">
+                    <div class="mem-bar-segment" style="width:30.5%; background: linear-gradient(90deg, #0ea5e9, #10b981);" title="Dense Layers">Dense 層 ~2.5 GB</div>
+                    <div class="mem-bar-segment" style="width:12.2%; background: linear-gradient(90deg, #f97316, #f59e0b);" title="Embeddings">Embed ~1.0 GB</div>
+                    <div class="mem-bar-segment" style="width:3.9%; background: linear-gradient(90deg, #06b6d4, #22d3ee);" title="KV Cache">KV 320MB</div>
+                    <div class="mem-bar-segment" style="width:0.7%; background: linear-gradient(90deg, #10b981, #34d399);" title="DeltaNet State">Δ 60M</div>
+                    <div class="mem-bar-segment" style="width:15.2%; background: linear-gradient(90deg, #10b981, #a78bfa);" title="Activation Buffer">Buffer ~1.2 GB</div>
+                    <div class="mem-bar-segment" style="width:37.5%; background: rgba(255,255,255,0.05); color: var(--text-muted);" title="Free">剩餘 ~2.9 GB ✨</div>
+                </div>
+            </div>
+
+            <div class="info-box tip" style="margin-top: 1rem;">
+                <strong>✅ 結論：32K context 下剩餘 ~2.9 GB，足夠分配給 Expert Cache Slots 和 MTP 預測頭！</strong>
+            </div>
+        </div>
+
+        <!-- RAM Budget -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-title">🖥️ 系統 RAM 預算（72 GB）</div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">以 Q4_K_M 模型 + 262K context 為例（最大壓力場景）</p>
+            
+            <div class="mem-bar-container">
+                <div class="mem-bar-label">
+                    <span>RAM 使用分佈</span>
+                    <span>已用 ~28 GB / 72 GB（39%）</span>
+                </div>
+                <div class="mem-bar">
+                    <div class="mem-bar-segment" style="width:27.8%; background: linear-gradient(90deg, #06b6d4, #0891b2);">Expert 權重 ~20 GB</div>
+                    <div class="mem-bar-segment" style="width:3.5%; background: linear-gradient(90deg, #f97316, #ea580c);">KV 溢出 ~2.5 GB</div>
+                    <div class="mem-bar-segment" style="width:2.8%; background: linear-gradient(90deg, #f43f5e, #e11d48);">計算暫存 ~2 GB</div>
+                    <div class="mem-bar-segment" style="width:5.6%; background: linear-gradient(90deg, #10b981, #7c3aed);">OS + 系統 ~4 GB</div>
+                    <div class="mem-bar-segment" style="width:60.3%; background: rgba(255,255,255,0.04); color: var(--text-muted);">剩餘 ~43 GB 🚀</div>
+                </div>
+            </div>
+
+            <div class="info-box tip" style="margin-top: 1rem;">
+                <strong>✅ 72 GB RAM 非常充裕！即使用 Q6_K（~31 GB）甚至 Q8_0（~38 GB）都完全沒問題。</strong>
+            </div>
+        </div>
+
+        <!-- KV Cache calculations -->
+        <div class="card">
+            <div class="card-title">📐 KV Cache 記憶體公式</div>
+            <div class="formula-box">
+                <div class="formula-label">Qwen3.6-35B-A3B KV Cache（僅 10 層 Gated Attention）</div>
+                KV = 2 × 10<sub>layers</sub> × 2<sub>kv_heads</sub> × 256<sub>head_dim</sub> × seq_len × P<sub>precision</sub>
+            </div>
+
+            <div class="data-table-wrapper" style="margin-top: 1rem;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Context 長度</th>
+                            <th>FP16 KV Cache</th>
+                            <th>Q8_0 KV Cache</th>
+                            <th>Q4_0 KV Cache</th>
+                            <th>可放入 8GB VRAM？</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>4K</td><td>40 MB</td><td>20 MB</td><td>10 MB</td><td><span class="badge badge-green">✅ 輕鬆</span></td></tr>
+                        <tr><td>8K</td><td>80 MB</td><td>40 MB</td><td>20 MB</td><td><span class="badge badge-green">✅ 輕鬆</span></td></tr>
+                        <tr><td>16K</td><td>160 MB</td><td>80 MB</td><td>40 MB</td><td><span class="badge badge-green">✅ 輕鬆</span></td></tr>
+                        <tr class="highlight-row"><td><strong>32K</strong></td><td><strong>320 MB</strong></td><td><strong>160 MB</strong></td><td><strong>80 MB</strong></td><td><span class="badge badge-green">✅ 推薦</span></td></tr>
+                        <tr><td>64K</td><td>640 MB</td><td>320 MB</td><td>160 MB</td><td><span class="badge badge-green">✅ 可行</span></td></tr>
+                        <tr><td>131K</td><td>1.28 GB</td><td>640 MB</td><td>320 MB</td><td><span class="badge badge-yellow">⚠️ 須搭配 Q4 KV</span></td></tr>
+                        <tr><td>262K</td><td>2.56 GB</td><td>1.28 GB</td><td>640 MB</td><td><span class="badge badge-yellow">⚠️ Q4 KV + 精簡 buffer</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-box info" style="margin-top: 1rem;">
+                <strong>💡 對比：</strong>傳統 40 層 Transformer 在 262K context 下的 FP16 KV Cache 高達 <strong>~10 GB+</strong>。Qwen3.6-35B-A3B 的 Hybrid 架構將其壓縮到僅 <strong>2.56 GB</strong>，這是此模型能在 8GB VRAM 上跑長文的根本原因。
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 4: QUANTIZATION ==================== -->
+    <section class="section fade-in" id="quant">
+        <div class="section-header">
+            <div class="section-number">Section 04</div>
+            <h2 class="section-title">🔬 量化方案選擇</h2>
+            <p class="section-desc">在品質、速度、VRAM 之間找到最佳平衡點。</p>
+        </div>
+
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>量化等級</th>
+                        <th>檔案大小</th>
+                        <th>品質等級</th>
+                        <th>64GB RAM</th>
+                        <th>速度影響</th>
+                        <th>推薦度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>BF16</code></td>
+                        <td>~71 GB</td>
+                        <td><span class="badge badge-green">無損</span></td>
+                        <td><span class="badge badge-yellow">勉強</span></td>
+                        <td>最慢（CPU bound）</td>
+                        <td>⬜⬜⬜⬜⬜</td>
+                    </tr>
+                    <tr>
+                        <td><code>Q8_0</code></td>
+                        <td>~38 GB</td>
+                        <td><span class="badge badge-green">極高</span></td>
+                        <td><span class="badge badge-green">✅</span></td>
+                        <td>較慢</td>
+                        <td>🟦🟦⬜⬜⬜</td>
+                    </tr>
+                    <tr>
+                        <td><code>Q6_K</code></td>
+                        <td>~31 GB</td>
+                        <td><span class="badge badge-green">很高</span></td>
+                        <td><span class="badge badge-green">✅</span></td>
+                        <td>中等</td>
+                        <td>🟦🟦🟦⬜⬜</td>
+                    </tr>
+                    <tr>
+                        <td><code>Q5_K_M</code></td>
+                        <td>~26 GB</td>
+                        <td><span class="badge badge-green">高</span></td>
+                        <td><span class="badge badge-green">✅</span></td>
+                        <td>較快</td>
+                        <td>🟦🟦🟦🟦⬜</td>
+                    </tr>
+                    <tr class="highlight-row">
+                        <td><code><strong>Q4_K_M ⭐</strong></code></td>
+                        <td><strong>~21 GB</strong></td>
+                        <td><span class="badge badge-green">推薦</span></td>
+                        <td><span class="badge badge-green">✅</span></td>
+                        <td><strong>快速</strong></td>
+                        <td><strong>🟦🟦🟦🟦🟦</strong></td>
+                    </tr>
+                    <tr>
+                        <td><code>Q3_K_XL</code></td>
+                        <td>~17 GB</td>
+                        <td><span class="badge badge-yellow">中等</span></td>
+                        <td><span class="badge badge-green">✅</span></td>
+                        <td>快速</td>
+                        <td>🟦🟦🟦⬜⬜</td>
+                    </tr>
+                    <tr>
+                        <td><code>Q3_K_S</code></td>
+                        <td>~14 GB</td>
+                        <td><span class="badge badge-yellow">較低</span></td>
+                        <td><span class="badge badge-green">✅</span></td>
+                        <td>最快</td>
+                        <td>🟦🟦⬜⬜⬜</td>
+                    </tr>
+                    <tr>
+                        <td><code>Q2_K</code></td>
+                        <td>~13 GB</td>
+                        <td><span class="badge badge-red">差</span></td>
+                        <td><span class="badge badge-green">✅</span></td>
+                        <td>最快</td>
+                        <td>🟦⬜⬜⬜⬜</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="two-col" style="margin-top: 1.5rem;">
+            <div class="info-box tip">
+                <strong>🏆 首選推薦：Q4_K_M</strong><br>
+                社群公認的「甜蜜點」。在 64GB RAM 的支撐下，模型主體 ~21 GB 僅佔 29%，剩餘大量空間供 KV Cache 和系統使用。品質與效能的最佳平衡。
+            </div>
+            <div class="info-box info">
+                <strong>🔄 進階選擇：Q5_K_M</strong><br>
+                若追求更高品質且不介意稍慢的速度，Q5_K_M（~26 GB）是升級選項。在 64GB RAM 下仍有 46 GB 空餘，完全不構成壓力。
+            </div>
+        </div>
+
+        <div class="info-box warn" style="margin-top: 1rem;">
+            <strong>⚠️ GGUF 來源：</strong>推薦使用 <code>unsloth/Qwen3.6-35B-A3B-GGUF</code> 的 UD（Unsloth Dynamic）系列，其對關鍵層（router、attention）保持更高精度。若需 MTP 加速，需額外下載 <code>unsloth/Qwen3.6-35B-A3B-MTP-GGUF</code>。
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 5: LLAMA.CPP PARAMETERS ==================== -->
+    <section class="section fade-in" id="params">
+        <div class="section-header">
+            <div class="section-number">Section 05</div>
+            <h2 class="section-title">⚙️ llama.cpp 參數全攻略</h2>
+            <p class="section-desc">每一個參數都經過精心計算，確保在 8GB VRAM 上榨乾每一滴效能。</p>
+        </div>
+
+        <!-- GPU/CPU Offloading -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>🎮 GPU / CPU 層卸載</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><code>-ngl 99</code></td>
+                            <td><strong>99</strong>（最大化）</td>
+                            <td>將所有可放入 VRAM 的層全部載入 GPU。llama.cpp 會自動適配實際可用空間。</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><code>--cpu-moe</code></td>
+                            <td><strong>啟用</strong></td>
+                            <td>將所有 MoE Expert 權重路由至 CPU RAM。這是 8GB VRAM 的<strong>核心策略</strong>。</td>
+                        </tr>
+                        <tr>
+                            <td><code>--n-cpu-moe N</code></td>
+                            <td>備選</td>
+                            <td>與 <code>--cpu-moe</code> 二選一。可精細控制卸載層數（如 35 = 前 35 層的 Expert 放 CPU）。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="info-box info" style="margin-top: 0.5rem;">
+                <strong>原理：</strong>使用 <code>--cpu-moe</code> 後，GPU 只保留 Dense 層（Attention + Norms），Expert FFN 全部在 CPU 計算。推理時只有極小的 Activation Vector 跨 PCIe 傳輸。
+            </div>
+        </div>
+
+        <!-- Expert Cache -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>🔥 熱門 Expert 快取</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><code>--moe-expert-cache-size N</code></td>
+                            <td><strong>4 ~ 8</strong></td>
+                            <td>在 VRAM 中快取 N 個最常被路由的 Expert。利用齊夫定律（Zipf's Law），~20% 的 Expert 處理 ~80% 的 Token。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="info-box tip" style="margin-top: 0.5rem;">
+                <strong>效能加速原理：</strong>每個 Expert 在 Q4_K_M 下僅 ~0.5-2 MB。快取 8 個 Expert 只額外佔用 ~4-16 MB VRAM，但能將 PCIe 通訊減少 ~80%，極高 ROI。
+            </div>
+        </div>
+
+        <!-- KV Cache -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>🗂️ KV Cache 量化</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><code>--cache-type-k q8_0</code></td>
+                            <td><strong>q8_0</strong></td>
+                            <td>KV Cache Key 量化為 Q8_0。品質幾乎無損，記憶體減半。</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><code>--cache-type-v q8_0</code></td>
+                            <td><strong>q8_0</strong></td>
+                            <td>KV Cache Value 量化為 Q8_0。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="info-box warn" style="margin-top: 0.5rem;">
+                <strong>進階選項：</strong>若需要極長 context（262K），可改用 <code>q4_0</code> 或 <code>q4_1</code>，KV Cache 再縮小一半。但可能影響長文本注意力品質。<br>
+                <strong>注意：</strong>使用量化 KV Cache 必須在編譯 llama.cpp 時開啟 <code>-DGGML_CUDA_FA_ALL_QUANTS=ON</code>。
+            </div>
+        </div>
+
+        <!-- Flash Attention -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>⚡ Flash Attention</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><code>--flash-attn</code> / <code>-fa</code></td>
+                            <td><strong>啟用</strong></td>
+                            <td><strong>必須啟用</strong>。大幅降低 Attention 計算的記憶體使用，並加速 KV Cache 量化在 GPU 上的執行。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MTP -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>🚀 原生 MTP 多 Token 預測</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><code>--spec-type draft-mtp</code></td>
+                            <td><strong>啟用</strong></td>
+                            <td>使用模型內建的 MTP 預測頭進行投機解碼。零額外 VRAM 負擔。</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><code>--spec-draft-n-max</code></td>
+                            <td><strong>2</strong></td>
+                            <td>每次前向傳播預測最多 2 個候選 Token。甜蜜點，接受率 >80%。</td>
+                        </tr>
+                        <tr>
+                            <td><code>--spec-draft-p-min</code></td>
+                            <td><strong>0.5</strong></td>
+                            <td>候選 Token 信賴度門檻。低於此機率的預測會被丟棄，避免浪費計算。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="info-box tip" style="margin-top: 0.5rem;">
+                <strong>⚡ 速度提升 ~1.4-2.2x！</strong>需使用 MTP 版本的 GGUF 檔案（如 <code>unsloth/Qwen3.6-35B-A3B-MTP-GGUF</code>）。標準 GGUF 不包含 MTP 預測頭，此參數無效。
+            </div>
+        </div>
+
+        <!-- Memory Management -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>🧊 記憶體管理</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><code>--no-mmap</code></td>
+                            <td><strong>啟用</strong></td>
+                            <td>Windows 上建議使用。禁用 mmap，直接將模型載入 RAM，避免分頁延遲。</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><code>--mlock</code></td>
+                            <td><strong>啟用</strong></td>
+                            <td>鎖定記憶體頁面，防止 OS 將模型權重換出至 pagefile。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Batch & Threading -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>📦 批次大小與執行緒</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td><code>--ctx-size</code> / <code>-c</code></td>
+                            <td><strong>32768</strong></td>
+                            <td>起始建議 32K。可逐步增加至 65K、131K，觀察穩定性。</td>
+                        </tr>
+                        <tr>
+                            <td><code>--batch-size</code> / <code>-b</code></td>
+                            <td><strong>2048</strong></td>
+                            <td>Prompt 處理批次大小。VRAM 緊張時可降至 1024 或 512。</td>
+                        </tr>
+                        <tr>
+                            <td><code>--ubatch-size</code> / <code>-ub</code></td>
+                            <td><strong>512</strong></td>
+                            <td>微批次大小。控制 prompt 處理時的峰值 VRAM 使用。</td>
+                        </tr>
+                        <tr>
+                            <td><code>--threads</code> / <code>-t</code></td>
+                            <td><strong>物理核心數</strong></td>
+                            <td>設為 CPU 物理核心數（非超線程數）。如 8 核 CPU 設為 8。</td>
+                        </tr>
+                        <tr>
+                            <td><code>--threads-batch</code> / <code>-tb</code></td>
+                            <td><strong>邏輯核心數</strong></td>
+                            <td>批次處理時可用更多線程。如 8C/16T 的 CPU 設為 16。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sampling -->
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <h3>🎲 取樣參數</h3>
+            <span class="collapsible-arrow">▼</span>
+        </div>
+        <div class="collapsible-body">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>參數</th><th>設定值</th><th>說明</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>--temp</code></td><td>0.6</td><td>溫度。0.6 為平衡點；程式碼生成可用 0.2-0.4。</td></tr>
+                        <tr><td><code>--top-p</code></td><td>0.95</td><td>Nucleus sampling。</td></tr>
+                        <tr><td><code>--top-k</code></td><td>20</td><td>Top-K sampling。</td></tr>
+                        <tr><td><code>--min-p</code></td><td>0.0</td><td>最低機率門檻。</td></tr>
+                        <tr><td><code>--jinja</code></td><td>啟用</td><td>使用 Jinja2 模板處理聊天格式。</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 6: BUILD INSTRUCTIONS ==================== -->
+    <section class="section fade-in" id="build">
+        <div class="section-header">
+            <div class="section-number">Section 06</div>
+            <h2 class="section-title">🔨 llama.cpp 編譯指南（Windows + CUDA）</h2>
+            <p class="section-desc">從原始碼編譯，開啟所有效能最佳化旗標。RTX 3070 Ti Compute Capability = 8.6。</p>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-title">📋 前置需求</div>
+            <ul class="checklist" style="margin-top: 0.5rem;">
+                <li>Git for Windows</li>
+                <li>CMake 3.20+（加入系統 PATH）</li>
+                <li>Visual Studio 2022（安裝「使用 C++ 的桌面開發」工作負載）</li>
+                <li>NVIDIA CUDA Toolkit 12.x（建議 12.8+，<strong>避免 13.2</strong>，已知低 bit 量化 bug）</li>
+                <li>最新 NVIDIA 顯卡驅動</li>
+            </ul>
+        </div>
+
+        <div class="code-block">
+            <div class="code-block-header">
+                <div class="code-block-title">📂 編譯指令（Developer Command Prompt for VS 2022）</div>
+                <button class="code-block-copy" onclick="copyCode(this)">複製</button>
+            </div>
+            <pre><span class="comment">:: 1. Clone llama.cpp</span>
+<span class="flag">git</span> clone https://github.com/ggerganov/llama.cpp
+<span class="flag">cd</span> llama.cpp
+
+<span class="comment">:: 2. 建立 build 目錄並設定 CMake</span>
+<span class="flag">mkdir</span> build
+<span class="flag">cd</span> build
+
+<span class="comment">:: 3. 關鍵編譯旗標：</span>
+<span class="comment">::    -DGGML_CUDA=ON          → 啟用 CUDA GPU 加速</span>
+<span class="comment">::    -DGGML_CUDA_FA=ON       → 啟用 Flash Attention</span>
+<span class="comment">::    -DGGML_CUDA_FA_ALL_QUANTS=ON → 支援所有量化 KV Cache 類型</span>
+<span class="comment">::    -DCMAKE_CUDA_ARCHITECTURES=86 → RTX 3070 Ti (SM 8.6)</span>
+<span class="flag">cmake</span> .. ^
+  <span class="value">-DGGML_CUDA=ON</span> ^
+  <span class="value">-DGGML_CUDA_FA=ON</span> ^
+  <span class="value">-DGGML_CUDA_FA_ALL_QUANTS=ON</span> ^
+  <span class="value">-DCMAKE_CUDA_ARCHITECTURES=86</span> ^
+  <span class="value">-DCMAKE_BUILD_TYPE=Release</span>
+
+<span class="comment">:: 4. 編譯（-j 8 使用 8 線程平行編譯）</span>
+<span class="flag">cmake</span> --build . --config Release -j <span class="value">8</span>
+
+<span class="comment">:: 5. 完成後執行檔位於：build\bin\Release\</span>
+<span class="comment">::    llama-server.exe, llama-cli.exe 等</span></pre>
+        </div>
+
+        <div class="info-box critical" style="margin-top: 1rem;">
+            <strong>🚨 重要：</strong>若不加 <code>-DGGML_CUDA_FA_ALL_QUANTS=ON</code>，量化 KV Cache（如 q8_0, q4_0）的計算會被強制回退到 CPU，導致推理速度嚴重退化！
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 7: FINAL COMMAND ==================== -->
+    <section class="section fade-in" id="command">
+        <div class="section-header">
+            <div class="section-number">Section 07</div>
+            <h2 class="section-title">🎯 登峰造極：最終部署指令</h2>
+            <p class="section-desc">一行指令，集結所有優化策略。</p>
+        </div>
+
+        <!-- Tabs for different configs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'tab-balanced')">⚖️ 平衡配置（推薦）</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-maxctx')">📚 最大上下文</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-maxspeed')">🏎️ 極速配置</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-maxquality')">💎 最高品質</button>
+        </div>
+
+        <!-- Balanced Config -->
+        <div class="tab-content active" id="tab-balanced">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <div class="code-block-title">⚖️ 平衡配置 — Q4_K_M + 32K context + MTP</div>
+                    <button class="code-block-copy" onclick="copyCode(this)">複製</button>
+                </div>
+                <pre><span class="comment">REM === 登峰造極：平衡配置（推薦）===</span>
+<span class="flag">llama-server.exe</span> ^
+  <span class="flag">-m</span> <span class="string">Qwen3.6-35B-A3B-MTP-Q4_K_M.gguf</span> ^
+  <span class="comment">REM --- GPU / CPU 卸載 ---</span>
+  <span class="flag">-ngl</span> <span class="value">99</span> ^
+  <span class="flag">--cpu-moe</span> ^
+  <span class="flag">--moe-expert-cache-size</span> <span class="value">8</span> ^
+  <span class="comment">REM --- Context & KV Cache ---</span>
+  <span class="flag">-c</span> <span class="value">32768</span> ^
+  <span class="flag">--flash-attn</span> ^
+  <span class="flag">--cache-type-k</span> <span class="value">q8_0</span> ^
+  <span class="flag">--cache-type-v</span> <span class="value">q8_0</span> ^
+  <span class="comment">REM --- MTP 投機解碼 ---</span>
+  <span class="flag">--spec-type</span> <span class="value">draft-mtp</span> ^
+  <span class="flag">--spec-draft-n-max</span> <span class="value">2</span> ^
+  <span class="flag">--spec-draft-p-min</span> <span class="value">0.5</span> ^
+  <span class="comment">REM --- 記憶體管理 ---</span>
+  <span class="flag">--no-mmap</span> ^
+  <span class="flag">--mlock</span> ^
+  <span class="comment">REM --- 批次 & 執行緒 ---</span>
+  <span class="flag">-b</span> <span class="value">2048</span> ^
+  <span class="flag">-ub</span> <span class="value">512</span> ^
+  <span class="flag">-t</span> <span class="value">8</span> ^
+  <span class="comment">REM --- 取樣 & 伺服器 ---</span>
+  <span class="flag">--temp</span> <span class="value">0.6</span> ^
+  <span class="flag">--top-p</span> <span class="value">0.95</span> ^
+  <span class="flag">--top-k</span> <span class="value">20</span> ^
+  <span class="flag">--jinja</span> ^
+  <span class="flag">--timeout</span> <span class="value">300</span></pre>
+            </div>
+        </div>
+
+        <!-- Max Context -->
+        <div class="tab-content" id="tab-maxctx">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <div class="code-block-title">📚 最大上下文 — Q4_K_M + 262K context</div>
+                    <button class="code-block-copy" onclick="copyCode(this)">複製</button>
+                </div>
+                <pre><span class="comment">REM === 最大上下文配置（262K tokens）===</span>
+<span class="flag">llama-server.exe</span> ^
+  <span class="flag">-m</span> <span class="string">Qwen3.6-35B-A3B-Q4_K_M.gguf</span> ^
+  <span class="flag">-ngl</span> <span class="value">99</span> ^
+  <span class="flag">--cpu-moe</span> ^
+  <span class="flag">-c</span> <span class="value">262144</span> ^
+  <span class="flag">--flash-attn</span> ^
+  <span class="flag">--cache-type-k</span> <span class="value">q4_0</span> ^
+  <span class="flag">--cache-type-v</span> <span class="value">q4_0</span> ^
+  <span class="flag">--no-mmap</span> --mlock ^
+  <span class="flag">-b</span> <span class="value">1024</span> -ub <span class="value">256</span> ^
+  <span class="flag">-t</span> <span class="value">8</span> ^
+  <span class="flag">--temp</span> <span class="value">0.6</span> --top-p <span class="value">0.95</span> ^
+  <span class="flag">--jinja</span> --timeout <span class="value">600</span></pre>
+            </div>
+            <div class="info-box warn">
+                <strong>⚠️ 注意：</strong>262K context 下 KV Cache Q4_0 ≈ 640 MB。Prompt 處理會較慢，建議降低 batch size 至 1024。不建議使用 MTP（可能因 VRAM 壓力而不穩定）。
+            </div>
+        </div>
+
+        <!-- Max Speed -->
+        <div class="tab-content" id="tab-maxspeed">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <div class="code-block-title">🏎️ 極速配置 — Q4_K_M + 8K context + MTP</div>
+                    <button class="code-block-copy" onclick="copyCode(this)">複製</button>
+                </div>
+                <pre><span class="comment">REM === 極速配置（最大 tokens/s）===</span>
+<span class="flag">llama-server.exe</span> ^
+  <span class="flag">-m</span> <span class="string">Qwen3.6-35B-A3B-MTP-Q4_K_M.gguf</span> ^
+  <span class="flag">-ngl</span> <span class="value">99</span> ^
+  <span class="flag">--cpu-moe</span> ^
+  <span class="flag">--moe-expert-cache-size</span> <span class="value">16</span> ^
+  <span class="flag">-c</span> <span class="value">8192</span> ^
+  <span class="flag">--flash-attn</span> ^
+  <span class="flag">--cache-type-k</span> <span class="value">q8_0</span> ^
+  <span class="flag">--cache-type-v</span> <span class="value">q8_0</span> ^
+  <span class="flag">--spec-type</span> <span class="value">draft-mtp</span> ^
+  <span class="flag">--spec-draft-n-max</span> <span class="value">3</span> ^
+  <span class="flag">--spec-draft-p-min</span> <span class="value">0.75</span> ^
+  <span class="flag">--no-mmap</span> --mlock ^
+  <span class="flag">-b</span> <span class="value">4096</span> -ub <span class="value">1024</span> ^
+  <span class="flag">-t</span> <span class="value">8</span> ^
+  <span class="flag">--temp</span> <span class="value">0.6</span> --top-p <span class="value">0.95</span> ^
+  <span class="flag">--jinja</span></pre>
+            </div>
+        </div>
+
+        <!-- Max Quality -->
+        <div class="tab-content" id="tab-maxquality">
+            <div class="code-block">
+                <div class="code-block-header">
+                    <div class="code-block-title">💎 最高品質 — Q6_K + FP16 KV + 32K</div>
+                    <button class="code-block-copy" onclick="copyCode(this)">複製</button>
+                </div>
+                <pre><span class="comment">REM === 最高品質配置 ===</span>
+<span class="flag">llama-server.exe</span> ^
+  <span class="flag">-m</span> <span class="string">Qwen3.6-35B-A3B-Q6_K.gguf</span> ^
+  <span class="flag">-ngl</span> <span class="value">99</span> ^
+  <span class="flag">--cpu-moe</span> ^
+  <span class="flag">-c</span> <span class="value">32768</span> ^
+  <span class="flag">--flash-attn</span> ^
+  <span class="flag">--cache-type-k</span> <span class="value">f16</span> ^
+  <span class="flag">--cache-type-v</span> <span class="value">f16</span> ^
+  <span class="flag">--no-mmap</span> --mlock ^
+  <span class="flag">-b</span> <span class="value">2048</span> -ub <span class="value">512</span> ^
+  <span class="flag">-t</span> <span class="value">8</span> ^
+  <span class="flag">--temp</span> <span class="value">0.6</span> --top-p <span class="value">0.95</span> ^
+  <span class="flag">--jinja</span></pre>
+            </div>
+            <div class="info-box info">
+                <strong>📝 說明：</strong>Q6_K（~31 GB）在 72 GB RAM 中完全放得下。KV Cache 使用 FP16 保留最高精度。適合對品質要求極高的場景。
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 8: PERFORMANCE ==================== -->
+    <section class="section fade-in" id="perf">
+        <div class="section-header">
+            <div class="section-number">Section 08</div>
+            <h2 class="section-title">📈 效能預估與基準</h2>
+            <p class="section-desc">基於社群實測數據和硬體規格推算的效能預估。</p>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-title">🏎️ 預估推理速度（Q4_K_M + --cpu-moe）</div>
+
+            <div class="perf-bar-chart" style="margin-top: 1rem;">
+                <div class="perf-bar-row">
+                    <div class="perf-bar-label">8K ctx</div>
+                    <div class="perf-bar-track">
+                        <div class="perf-bar-fill" style="width: 90%; background: linear-gradient(90deg, #0ea5e9, #10b981);">~45-75 t/s (含 MTP)</div>
+                    </div>
+                </div>
+                <div class="perf-bar-row">
+                    <div class="perf-bar-label">32K ctx</div>
+                    <div class="perf-bar-track">
+                        <div class="perf-bar-fill" style="width: 65%; background: linear-gradient(90deg, #06b6d4, #22d3ee);">~30-50 t/s</div>
+                    </div>
+                </div>
+                <div class="perf-bar-row">
+                    <div class="perf-bar-label">64K ctx</div>
+                    <div class="perf-bar-track">
+                        <div class="perf-bar-fill" style="width: 45%; background: linear-gradient(90deg, #10b981, #34d399);">~20-35 t/s</div>
+                    </div>
+                </div>
+                <div class="perf-bar-row">
+                    <div class="perf-bar-label">131K ctx</div>
+                    <div class="perf-bar-track">
+                        <div class="perf-bar-fill" style="width: 30%; background: linear-gradient(90deg, #f59e0b, #fbbf24);">~15-25 t/s</div>
+                    </div>
+                </div>
+                <div class="perf-bar-row">
+                    <div class="perf-bar-label">262K ctx</div>
+                    <div class="perf-bar-track">
+                        <div class="perf-bar-fill" style="width: 18%; background: linear-gradient(90deg, #f43f5e, #fb7185);">~8-15 t/s</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box info" style="margin-top: 1rem;">
+                <strong>💡 參考：</strong>人類閱讀速度約 3-5 tokens/s。即使在 262K context 下，8-15 t/s 仍然是即時可用的速度。MTP 可在短 context 下帶來 1.4-2.2x 的加速。
+            </div>
+        </div>
+
+        <!-- Comparison -->
+        <div class="card">
+            <div class="card-title">📊 不同配置效能對比</div>
+            <div class="data-table-wrapper" style="margin-top: 0.5rem;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>配置</th>
+                            <th>Context</th>
+                            <th>KV Cache</th>
+                            <th>MTP</th>
+                            <th>預估 Token Gen</th>
+                            <th>體驗感受</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td><strong>⚖️ 平衡（推薦）</strong></td>
+                            <td>32K</td>
+                            <td>Q8_0</td>
+                            <td>✅ n=2</td>
+                            <td><strong>~40-60 t/s</strong></td>
+                            <td><span class="badge badge-green">🟢 流暢</span></td>
+                        </tr>
+                        <tr>
+                            <td>🏎️ 極速</td>
+                            <td>8K</td>
+                            <td>Q8_0</td>
+                            <td>✅ n=3</td>
+                            <td>~50-80 t/s</td>
+                            <td><span class="badge badge-green">🟢 極快</span></td>
+                        </tr>
+                        <tr>
+                            <td>📚 長文</td>
+                            <td>131K</td>
+                            <td>Q4_0</td>
+                            <td>❌</td>
+                            <td>~15-25 t/s</td>
+                            <td><span class="badge badge-yellow">🟡 可用</span></td>
+                        </tr>
+                        <tr>
+                            <td>📚 極限長文</td>
+                            <td>262K</td>
+                            <td>Q4_0</td>
+                            <td>❌</td>
+                            <td>~8-15 t/s</td>
+                            <td><span class="badge badge-yellow">🟡 尚可</span></td>
+                        </tr>
+                        <tr>
+                            <td>💎 最高品質</td>
+                            <td>32K</td>
+                            <td>FP16</td>
+                            <td>❌</td>
+                            <td>~25-40 t/s</td>
+                            <td><span class="badge badge-green">🟢 流暢</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== SECTION 9: ROADMAP ==================== -->
+    <section class="section fade-in" id="roadmap">
+        <div class="section-header">
+            <div class="section-number">Section 09</div>
+            <h2 class="section-title">🗺️ 執行路線圖</h2>
+            <p class="section-desc">分階段執行，每步驗證，確保穩定到位。</p>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-phase">Phase 1 — 環境準備</div>
+                <div class="timeline-title">安裝前置工具與驗證 CUDA 環境</div>
+                <div class="timeline-desc">
+                    安裝 Visual Studio 2022（C++ 桌面開發）、CMake、CUDA Toolkit 12.x（避免 13.2）、Git。<br>
+                    驗證 <code>nvcc --version</code> 和 <code>nvidia-smi</code> 正常運作。
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-phase">Phase 2 — 編譯 llama.cpp</div>
+                <div class="timeline-title">從原始碼編譯，開啟所有效能旗標</div>
+                <div class="timeline-desc">
+                    Clone 最新版 llama.cpp，使用 CMake 設定：<br>
+                    <code>-DGGML_CUDA=ON -DGGML_CUDA_FA=ON -DGGML_CUDA_FA_ALL_QUANTS=ON -DCMAKE_CUDA_ARCHITECTURES=86</code><br>
+                    編譯 Release 模式，驗證 <code>llama-server.exe</code> 可執行。
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-phase">Phase 3 — 下載模型</div>
+                <div class="timeline-title">從 Hugging Face 下載 GGUF 量化模型</div>
+                <div class="timeline-desc">
+                    下載 <code>unsloth/Qwen3.6-35B-A3B-GGUF</code> 的 Q4_K_M 版本（~21 GB）。<br>
+                    若需 MTP 加速，額外下載 <code>unsloth/Qwen3.6-35B-A3B-MTP-GGUF</code>。<br>
+                    驗證檔案完整性（SHA256）。
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-phase">Phase 4 — 基礎測試</div>
+                <div class="timeline-title">最小配置啟動，驗證基本推理能力</div>
+                <div class="timeline-desc">
+                    使用小 context（4K）、不開 MTP，驗證模型能成功載入並生成合理輸出。<br>
+                    監控 <code>nvidia-smi</code> 確認 VRAM 使用量在 8 GB 以內。
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-phase">Phase 5 — 逐步優化</div>
+                <div class="timeline-title">疊加優化參數，逐步推向極限</div>
+                <div class="timeline-desc">
+                    依序開啟：<code>--cpu-moe</code> → <code>--flash-attn</code> → KV Cache 量化 → <code>--moe-expert-cache-size</code> → MTP。<br>
+                    每次新增一個參數後驗證穩定性和輸出品質。
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-phase">Phase 6 — 效能基準測試</div>
+                <div class="timeline-title">測量不同配置的 tokens/s</div>
+                <div class="timeline-desc">
+                    使用標準 prompt 在 8K / 32K / 131K / 262K context 下測試 token 生成速度。<br>
+                    記錄 VRAM 使用量、CPU 使用率、RAM 佔用。<br>
+                    使用 <code>llama-bench</code> 或自製腳本進行系統性測試。
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-phase">Phase 7 — 登峰造極</div>
+                <div class="timeline-title">最終配置固化與長期穩定性驗證</div>
+                <div class="timeline-desc">
+                    確定最終參數組合。進行 1 小時以上的連續推理測試，監控記憶體洩漏。<br>
+                    建立啟動腳本（.bat / .ps1），方便一鍵啟動。<br>
+                    更新 <code>CONTEXT.md</code> 記錄最終配置。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== SECTION: KEY INSIGHTS ==================== -->
+    <section class="section fade-in" id="insights">
+        <div class="section-header">
+            <div class="section-number">Section 10</div>
+            <h2 class="section-title">🧠 核心洞見</h2>
+            <p class="section-desc">為什麼這個「不可能的任務」其實是可行的。</p>
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-title">💡 洞見 1：MoE = 偽裝的 3B 模型</div>
+                <p style="color: var(--text-secondary); font-size: 0.88rem;">
+                    雖然總參數 35B，但每個 Token 只啟用 3B。計算量等同於 3B dense 模型，但擁有 35B 的知識容量。<strong>GPU 只需要處理 3B 的計算強度。</strong>
+                </p>
+            </div>
+            <div class="card">
+                <div class="card-title">💡 洞見 2：Hybrid 架構的 KV Cache 奇蹟</div>
+                <p style="color: var(--text-secondary); font-size: 0.88rem;">
+                    30/40 層使用 DeltaNet（固定 60 MiB state），只有 10 層需要 KV Cache。262K context 的 KV Cache 僅 2.56 GB（FP16），<strong>比傳統架構少 4 倍。</strong>
+                </p>
+            </div>
+            <div class="card">
+                <div class="card-title">💡 洞見 3：72 GB RAM 是秘密武器</div>
+                <p style="color: var(--text-secondary); font-size: 0.88rem;">
+                    Q4_K_M 模型僅 ~21 GB，RAM 使用率不到 30%。即使換用 Q8_0（~38 GB），仍有 34 GB 餘裕。<strong>RAM 完全不是瓶頸。</strong>
+                </p>
+            </div>
+            <div class="card">
+                <div class="card-title">💡 洞見 4：PCIe 4.0 x16 完全夠用</div>
+                <p style="color: var(--text-secondary); font-size: 0.88rem;">
+                    <code>--cpu-moe</code> 只傳輸 Activation Vector（~4-16 KB/token/layer），不搬運完整 Expert 權重。25 GB/s 的 PCIe 頻寬在此場景下<strong>完全不是瓶頸。</strong>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p class="footer-text">
+            Qwen3.6-35B-A3B × RTX 3070 Ti (8GB VRAM) + 64GB RAM<br>
+            登峰造極部署計畫 — 基於 llama.cpp 社群最新實測數據與架構分析<br>
+            <span style="color: var(--accent-indigo);">Generated with ⚡ by Antigravity</span>
+        </p>
+    </footer>
+
+</div>
+
+
+
+
+    </div>
+
+    
+    <!-- Tab 3: Diagnostic -->
+    <div id="diagnostic-tab" class="tab-content">
+        <div class="main-content">
+            <div class="plan-hero">
+                <div class="plan-hero-badge">DIAGNOSTIC WORKFLOW</div>
+                <h1>底層優化與<span class="gradient-text">物理診斷報告</span></h1>
+                <p class="plan-hero-subtitle">RTX 3070 Ti (8GB VRAM) + 64GB RAM DDR4 雙通道環境下的極限推理實測與調優歷程</p>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--accent-indigo);">33.46 GB/s</div>
+                    <div class="stat-label">實測多執行緒唯讀頻寬 (雙通道)</div>
+                    <div class="stat-desc">自 18.48 GB/s 單通道 Flex Mode 升級解鎖</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--accent-rose);">14.29 TPS</div>
+                    <div class="stat-label">調優前速度 (n_parallel=4)</div>
+                    <div class="stat-desc">VRAM 溢出觸發 WDDM Fallback</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--accent-emerald);">35.02 TPS</div>
+                    <div class="stat-label">調優後實測速度 (Q4_K_M)</div>
+                    <div class="stat-desc">MTP 視窗=3 + 實體核鎖定 + 前台運行</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--accent-cyan);">48K (49,152)</div>
+                    <div class="stat-label">極限無損上下文</div>
+                    <div class="stat-desc">透過 free-vram 騰出顯存完全塞入 VRAM</div>
+                </div>
+            </div>
+            
+            <!-- 記憶體頻寬與 Flex Mode 退化 -->
+            <div class="section-card">
+                <div class="section-title">📊 1. 記憶體物理頻寬與 Flex Mode 退化診斷</div>
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-title">🔍 Flex Mode 混插非對稱單通道退化</div>
+                        <p class="card-text">
+                            本機採用 <code>8GB + 16GB + 16GB + 32GB</code> 混插的大雜燴記憶體。不同容量、廠牌混插導致主機板定址退化為 <strong>Flex Mode 非對稱單通道運作</strong>，且記憶體控制器為了相容性放寬了記憶體時序（Latency 延遲），造成隨機跳轉定址時發生大量的 <strong>匯流排空轉 (Bus Bubbles)</strong>。
+                        </p>
+                        <div class="progress-container">
+                            <div class="progress-header">
+                                <span>實測多執行緒唯讀頻寬 (雙通道)</span>
+                                <span>33.46 GB/s (物理定址極限)</span>
+                            </div>
+                            <div class="progress-bar-wrap">
+                                <div class="progress-bar" style="width: 65.4%; background: var(--gradient-warm);"></div>
+                            </div>
+                            <div class="progress-header" style="margin-top: 0.5rem;">
+                                <span>理論雙通道極限 (DDR4 3200)</span>
+                                <span>51.20 GB/s</span>
+                            </div>
+                            <div class="progress-bar-wrap">
+                                <div class="progress-bar" style="width: 100%; background: var(--gradient-cool);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">📐 純 CPU 推理物理極限推導</div>
+                        <p class="card-text">
+                            對於 Qwen3.6-35B-A3B MoE 模型，使用 <strong>Q4_K_M (4-bit)</strong> 量化，每生成一個 Token，CPU 必須從系統記憶體中讀取約 <strong>1.5 GB</strong> 的活化專家與 Dense 層參數。
+                        </p>
+                        <div class="formula-box">
+                            純 CPU 解碼極限 = 33.46 GB/s (雙通道) / 1.5 GB = 22.30 TPS
+                        </div>
+                        <p class="card-text" style="margin-top: 1rem;">
+                            <strong>結論：</strong> 若不使用任何優化手段，在此頻寬限制下，CPU 解碼速度的絕對物理鐵壁為 <strong>22.30 TPS</strong> (舊單通道為 12.32 TPS)。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 超越物理極限的優化突破 -->
+            <div class="section-card">
+                <div class="section-title">🚀 2. 突破頻寬鐵壁的加速三板斧</div>
+                <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div class="card">
+                        <div class="card-title">1️⃣ MTP 投機解碼 (預測窗口限制為 2)</div>
+                        <p class="card-text" style="font-size: 0.88rem;">
+                            經全自動參數網格調優，將投機預測窗口限制為 <strong>`2`</strong> 個 Token (而非預設的 4 個)。在 83%~88% 的高接受率下，此配置可極大降低預測錯誤後的驗證開銷，相較於 4 個窗口速度提升了 <strong>16%</strong>，成功實現 <strong>2.28x</strong> 的投機加速比！
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">2️⃣ 物理核心綁定 (--cpu-strict 1)</div>
+                        <p class="card-text" style="font-size: 0.88rem;">
+                            設定 <code>-t 8 -tb 8</code> 飽和 Ryzen 5700X 的 8 個實體核心，避免超執行緒 (SMT) 的頻寬競爭。開啟 <code>--cpu-strict 1</code> 強制核心綁定，禁止 Windows 調度器將執行緒跨核漂移，最大化處理器的 L1/L2 快取命中率。
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">3️⃣ 自旋鎖退避 (--poll 0)</div>
+                        <p class="card-text" style="font-size: 0.88rem;">
+                            將自旋鎖設為 <code>0</code>。自旋鎖為 0 可讓空閒核心在無工作時及時退讓，防止 CPU 因持續高負載發熱降頻，並優化 GPU/CPU 同步調度，為推論速度帶來額外 <strong>2 TPS</strong> 收益。
+                        </p>
+                    </div>
+                </div>
+                <div class="chart-box" style="margin-top: 2rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                    <div class="card-title" style="margin-bottom: 1.5rem; text-align: center;">🔥 TPS 解碼性能飛躍對比</div>
+                    <div class="bar-chart-container">
+                        <div class="bar-chart-row">
+                            <span class="bar-label">純 CPU 推理理論極限 (舊單通道 18.48 GB/s)</span>
+                            <div class="bar-wrap">
+                                <div class="bar-fill" style="width: 35%; background: #5a5a72;"></div>
+                                <span class="bar-value">12.32 TPS</span>
+                            </div>
+                        </div>
+                        <div class="bar-chart-row" style="margin-top: 1rem;">
+                            <span class="bar-label">純 CPU 推理理論極限 (雙通道 33.46 GB/s)</span>
+                            <div class="bar-wrap">
+                                <div class="bar-fill" style="width: 60%; background: #71719a;"></div>
+                                <span class="bar-value">22.30 TPS</span>
+                            </div>
+                        </div>
+                        <div class="bar-chart-row" style="margin-top: 1rem;">
+                            <span class="bar-label">未優化預設參數 (VRAM Fallback 降速)</span>
+                            <div class="bar-wrap">
+                                <div class="bar-fill" style="width: 43%; background: var(--accent-rose);"></div>
+                                <span class="bar-value">14.29 TPS</span>
+                            </div>
+                        </div>
+                        <div class="bar-chart-row" style="margin-top: 1rem;">
+                            <span class="bar-label">極致參數優化實測 (Q4_K_M + MTP 雙通道) 🚀</span>
+                            <div class="bar-wrap">
+                                <div class="bar-fill" style="width: 100%; background: var(--gradient-primary);"></div>
+                                <span class="bar-value">35.02 TPS</span>
+                            </div>
+                        </div>
+                        <div class="bar-chart-row" style="margin-top: 1rem;">
+                            <span class="bar-label">Q3_K_M 量化極速實測 (MTP 雙通道) ⭐️</span>
+                            <div class="bar-wrap">
+                                <div class="bar-fill" style="width: 87%; background: var(--gradient-cool);"></div>
+                                <span class="bar-value">30.65 TPS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KV Cache 顯存防 Fallback 控制 -->
+            <div class="section-card">
+                <div class="section-title">🔒 3. KV Cache 顯存管理與防 WDDM Fallback 機制</div>
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-title">⚠️ WDDM VRAM Fallback 降速陷阱</div>
+                        <p class="card-text">
+                            當 context 設定為 32768 時，<code>llama-server</code> 預設會為 4 個 Slot 併發分配 KV Cache (<code>n_parallel = 4</code>)，導致其顯存佔用高達 <strong>10.48 GB</strong>。加上骨幹 Dense 權重的 3 GB，總計高達 13.48 GB，嚴重溢出 RTX 3070 Ti 的 8GB VRAM。<br><br>
+                            這會觸發 Windows 的 WDDM Fallback 機制，自動將分頁轉移至系統記憶體，迫使 GPU 經由慢速 PCIe 進行讀取，TPS 直接被腰凍至 <strong>14.29 TPS</strong>。
+                        </p>
+                        <div class="badge-row" style="margin-top: 1.5rem;">
+                            <span class="badge badge-rose">Fallback (14.29 TPS)</span>
+                            <span class="badge badge-emerald" style="margin-left: 0.5rem;">鎖定 NP=1 (28.09 TPS)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">🛡️ 槽數限制與 KV Cache 量化甜蜜點</div>
+                        <p class="card-text">
+                            為了榨乾 8GB VRAM 同時防止 Fallback，我們實施了以下兩大核心防禦措施：
+                        </p>
+                        <p class="card-text" style="margin-top: 0.5rem; font-size: 0.88rem;">
+                            • <strong>限制併發槽數 (<code>-np 1</code>)</strong>：將 Slot 數強制鎖定為 1，使 KV cache 顯存佔用降至 <strong>2.62 GB</strong>，總顯存需求僅 5.62 GB，完美安全塞入 8GB VRAM 中，性能重回 28+ TPS。<br>
+                            • <strong>KV Cache 8-bit 量化 (<code>q8_0</code>)</strong>：KV cache 是動態 Activation，對精度極度敏感。使用 8-bit 可以節省 50% 顯存且幾乎無損精度，而 4-bit KV Cache (<code>q4_0</code>) 會造成長上下文 PPL 困惑度呈指數級上升（邏輯崩潰與幻覺），且因為反量化開銷在很多硬體上反而變慢。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-title">🌌 極限長上下文擴展 (48K Context)</div>
+                    <p class="card-text">
+                        為了把非模型佔用的空間通通留給模型，以擴展最大上下文，我們編寫了 <code>free-background-vram.bat</code> 強制結束桌布引擎、Discord 等背景吃顯存的程式，安全回收 <strong>2 - 3 GB VRAM</strong>。<br><br>
+                        在 8-bit KV Cache 且 <code>-np 1</code> 的設定下，<strong>48K (49152) 上下文</strong>需約 3.93 GB KV Cache，加上骨幹 Dense 的 3 GB，總需求為 6.93 GB。背景清理乾淨後，<strong>可完美塞進 8GB 實體顯存，實現無損長上下文的滿血高速推理！</strong>
+                    </p>
+                </div>
+
+                <div class="chart-card" style="grid-column: span 2;">
+                    <div class="chart-title">⚡ Q4 量化模型極限衝刺與前台排程紅利 (OS Scheduling vs. TPS)</div>
+                    <div class="chart-container" style="height: 380px;">
+                        <canvas id="q4SprintChart"></canvas>
+                    </div>
+                    <div class="report-insight">
+                        <span class="insight-badge">前台排程加速</span><br>
+                        實測揭示，當 <code>llama-server.exe</code> 在 Windows 獨立前台視窗運行時，速度大幅衝上 <strong>27 ~ 29 TPS</strong>；而被壓入背景（與 Python 腳本共用控制台背景）時則限制在 <strong>22 ~ 23 TPS</strong>！<br>
+                        <strong>原理解析：</strong>Windows 會給予前台活動視窗及其執行緒高達 3 倍的 CPU 時間片與高精度定時器，大幅降低了 MoE 專家解碼時的線程上下文切換開銷，釋放了額外 20% 的硬體隱形算力。此外，在短文本下將 KV Cache 設定為 <code>f16</code> 能徹底免除反量化計算開銷，成為衝刺 70+ TPS 雙通道時代的黃金配置。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab 2: Glossary -->
+    <div id="glossary-tab" class="tab-content">
+        
+
+
+
+
+
+
+
+<div class="search-bar">
+    <div class="search-inner">
+        <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" type="text" id="searchInput" placeholder="搜尋術語（中文或英文皆可）…" oninput="filterTerms()">
+        </div>
+    </div>
+</div>
+
+<div class="main">
+
+<section class="glossary-hero">
+    <h1>每個名詞，<span class="glow">講清楚</span></h1>
+    <p class="glossary-hero-sub">部署計畫裡出現的所有專有名詞，用最白話的方式解釋，搭配生活化比喻讓你秒懂。</p>
+</section>
+
+<div class="cat-jump">
+    <a class="cat-pill" href="#cat-basic">🧱 基礎概念</a>
+    <a class="cat-pill" href="#cat-arch">🏗️ 模型架構</a>
+    <a class="cat-pill" href="#cat-moe">⚡ MoE 專家系統</a>
+    <a class="cat-pill" href="#cat-attn">🧠 注意力機制</a>
+    <a class="cat-pill" href="#cat-quant">🔬 量化技術</a>
+    <a class="cat-pill" href="#cat-mem">💾 記憶體管理</a>
+    <a class="cat-pill" href="#cat-hw">💻 硬體相關</a>
+    <a class="cat-pill" href="#cat-param">⚙️ llama.cpp 參數</a>
+    <a class="cat-pill" href="#cat-perf">📈 效能指標</a>
+    <a class="cat-pill" href="#cat-sample">🎲 取樣與生成</a>
+    <a class="cat-pill" href="#cat-build">🔨 編譯與工具</a>
+</div>
+
+<!-- ========================================== -->
+<!-- 基礎概念 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-basic">
+    <div class="cat-header">
+        <span class="cat-icon">🧱</span>
+        <span class="cat-title">基礎概念</span>
+        <span class="cat-count">8 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="llm large language model 大型語言模型">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">LLM</span>
+                <span class="term-zh">大型語言模型</span>
+            </div>
+            <span class="term-tag tag-arch">基礎</span>
+        </div>
+        <div class="term-body">
+            <strong>Large Language Model</strong> 的縮寫。一種經過海量文本資料訓練的 AI 模型，能理解和生成人類語言。ChatGPT、Claude、Qwen 都是 LLM。
+            <div class="analogy">就像一個讀了全世界圖書館所有書的超級學霸，你問什麼問題它都能給出答案。Qwen3.6-35B-A3B 就是這樣一個「學霸」。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="parameter 參數 weight 權重">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Parameter / Weight</span>
+                <span class="term-zh">參數 / 權重</span>
+            </div>
+            <span class="term-tag tag-arch">基礎</span>
+        </div>
+        <div class="term-body">
+            模型在訓練過程中學到的「知識」，以數字形式儲存。每個 parameter 就是一個浮點數。<strong>35B = 350 億個參數</strong>，代表模型內部有 350 億個數字在協同運作。模型的參數越多，理論上越聰明，但也越佔空間。
+            <div class="analogy">如果把大腦比喻成模型，那「參數」就像是大腦裡的「突觸連結」。突觸越多，腦子越聰明，但也越耗能量。一個 35B 的模型就像有 350 億個突觸的超級大腦。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="token 令牌 詞元">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Token</span>
+                <span class="term-zh">令牌 / 詞元</span>
+            </div>
+            <span class="term-tag tag-arch">基礎</span>
+        </div>
+        <div class="term-body">
+            模型處理文字的最小單位。不是一個字，也不是一個詞，而是模型自己切分出來的片段。英文大約 <strong>1 個單詞 ≈ 1.3 token</strong>，中文大約 <strong>1 個字 ≈ 1.5–2 token</strong>。
+            <div class="analogy">想像你在拼樂高。「Token」就是每一塊樂高積木。模型不是一次讀整句話，而是把句子拆成一塊塊積木來處理。「你好世界」可能會被拆成「你」「好」「世界」三個 token。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="inference 推理">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Inference</span>
+                <span class="term-zh">推理</span>
+            </div>
+            <span class="term-tag tag-perf">基礎</span>
+        </div>
+        <div class="term-body">
+            模型「思考並回答問題」的過程。當你輸入一段文字，模型根據其內部的參數計算出回覆——這個計算過程就叫推理。和「訓練」（模型學習知識）是相對的概念。<strong>我們部署模型的目的就是做推理。</strong>
+            <div class="analogy">「訓練」= 學生讀書學習；「推理」= 學生坐在考場上答題。我們現在做的就是讓這個學霸坐到你的電腦上答題。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="context window context length 上下文 上下文長度 上下文視窗">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Context Window / Context Length</span>
+                <span class="term-zh">上下文視窗 / 上下文長度</span>
+            </div>
+            <span class="term-tag tag-arch">基礎</span>
+        </div>
+        <div class="term-body">
+            模型一次對話中能「記住」的最大文字量，以 token 為單位。<strong>262K = 262,144 tokens</strong>，大約等於一整本小說。context 越長，模型能參考的資訊越多，但也越消耗記憶體。
+            <div class="analogy">就像你的工作桌面大小。桌面越大，你能同時攤開越多文件參考。262K context 就像一張超大辦公桌，可以同時攤開一整本書來翻閱。但桌子越大，需要的房間（記憶體）也越大。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="tensor 張量">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Tensor</span>
+                <span class="term-zh">張量</span>
+            </div>
+            <span class="term-tag tag-arch">基礎</span>
+        </div>
+        <div class="term-body">
+            存放數據的多維數組（可以理解為高維度的表格）。模型的所有參數都以 tensor 的形式存放。一維 tensor = 向量（一列數字），二維 tensor = 矩陣（一張表格），三維以上就叫「張量」。
+            <div class="analogy">一維張量像一條項鍊（一串珠子），二維張量像一張 Excel 表格（行×列），三維張量像一疊表格（行×列×頁）。模型的權重就是一堆這樣的高維度表格。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="layer 層">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Layer</span>
+                <span class="term-zh">層</span>
+            </div>
+            <span class="term-tag tag-arch">基礎</span>
+        </div>
+        <div class="term-body">
+            模型的基本組成單元。模型像三明治一樣一層一層堆疊。輸入的文字從第 0 層進去，每經過一層就被「理解」得更深一點，最後從第 39 層輸出答案。<strong>Qwen3.6-35B-A3B 有 40 層</strong>。
+            <div class="analogy">像工廠的流水線。原料（你的文字）從第一道工序進去，經過 40 道工序加工，每一道工序都讓產品更精緻，最後出來的就是模型的回答。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="forward pass 前向傳播">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Forward Pass</span>
+                <span class="term-zh">前向傳播</span>
+            </div>
+            <span class="term-tag tag-arch">基礎</span>
+        </div>
+        <div class="term-body">
+            資料從模型的輸入端（第 0 層），逐層通過每一層的計算，最終到達輸出端產生結果——這整個過程叫做一次「前向傳播」。模型每生成一個 token，都要做一次完整的前向傳播。
+            <div class="analogy">就像一顆彈珠從柏青哥機器頂部丟下去，一路撞過各種釘子（每一層的計算），最後掉進底部的某個洞（輸出某個 token）。</div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 模型架構 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-arch">
+    <div class="cat-header">
+        <span class="cat-icon">🏗️</span>
+        <span class="cat-title">模型架構</span>
+        <span class="cat-count">7 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="transformer">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Transformer</span>
+                <span class="term-zh">變換器架構</span>
+            </div>
+            <span class="term-tag tag-arch">架構</span>
+        </div>
+        <div class="term-body">
+            幾乎所有現代 LLM 的骨架。2017 年由 Google 提出，核心是「<strong>自注意力機制</strong>」——讓模型在處理每個字時，能同時「看到」句子中的所有其他字，判斷哪些字跟當前的字最有關係。
+            <div class="analogy">傳統模型像從左到右逐字閱讀的人，看到第 100 個字時已經忘了第 1 個字。Transformer 則像能同時看到整頁所有文字的人，可以瞬間判斷哪些字之間有關聯。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="hidden size hidden dimension 隱藏維度">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Hidden Size</span>
+                <span class="term-zh">隱藏維度</span>
+            </div>
+            <span class="term-tag tag-arch">架構</span>
+        </div>
+        <div class="term-body">
+            模型內部用多少個數字來「描述」一個 token。Qwen3.6-35B-A3B 的 hidden size 是 <strong>2048</strong>，代表模型把每個 token 理解成一個包含 2048 個數字的向量。越大代表模型能捕捉越豐富的語意特徵。
+            <div class="analogy">如果用文字描述一個人，你可以只說「高」「矮」（2 維），也可以描述身高、體重、膚色、髮型……等 2048 個維度。維度越多，描述越精確。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="embedding 嵌入層 嵌入 embed">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Embedding</span>
+                <span class="term-zh">嵌入層</span>
+            </div>
+            <span class="term-tag tag-arch">架構</span>
+        </div>
+        <div class="term-body">
+            模型的「翻譯入口」。把人類的文字 token 轉成模型能理解的數字向量。Qwen3.6 有 <strong>248,320</strong> 個詞彙，每個詞彙對應一個 2048 維的向量。這個對照表就叫 Embedding 層。
+            <div class="analogy">就像字典。你查「蘋果」，字典會給你一段定義。Embedding 層就是模型的字典——查「蘋果」這個 token，它會給出一組代表「蘋果」含義的 2048 個數字。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="ffn feed-forward network 前饋網路 feed forward">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">FFN (Feed-Forward Network)</span>
+                <span class="term-zh">前饋神經網路</span>
+            </div>
+            <span class="term-tag tag-arch">架構</span>
+        </div>
+        <div class="term-body">
+            模型每一層裡面的「知識存儲區」。由簡單的矩陣乘法和激活函數組成。注意力機制負責「理解關係」，FFN 負責「運用知識」。在 MoE 模型中，FFN 部分被拆分成很多個 Expert（專家），這就是模型參數佔大頭的地方。
+            <div class="analogy">注意力機制 = 讀題（理解問題問什麼），FFN = 答題（運用知識給出答案）。MoE 的做法是把「答題」這步拆給 256 個專科老師，每次挑最懂的 8 個來回答。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="vocabulary vocab 詞彙表 vocabulary size">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Vocabulary Size</span>
+                <span class="term-zh">詞彙表大小</span>
+            </div>
+            <span class="term-tag tag-arch">架構</span>
+        </div>
+        <div class="term-body">
+            模型認識多少個「詞」。Qwen3.6-35B-A3B 的詞彙表有 <strong>248,320</strong> 個 token。包含中文字、英文單詞片段、標點符號、程式碼片段等。模型只能理解和輸出詞彙表內的 token。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="hybrid 混合架構">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Hybrid Architecture</span>
+                <span class="term-zh">混合架構</span>
+            </div>
+            <span class="term-tag tag-arch">架構</span>
+        </div>
+        <div class="term-body">
+            Qwen3.6-35B-A3B 同時使用兩種不同的注意力機制：<strong>Gated DeltaNet</strong>（線性注意力，30 層）和 <strong>Gated Attention</strong>（標準注意力，10 層），交替堆疊。這是它最大的架構特色。好處是只有 10 層需要 KV Cache，大幅減少記憶體消耗。
+            <div class="analogy">就像一棟 40 層的大樓，30 層是普通辦公室（DeltaNet，不需要額外儲物間），10 層是有大型檔案室的特殊樓層（Gated Attention，需要 KV Cache）。所以整棟大樓的儲物空間需求只有純檔案室大樓的 1/4。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="yarn yet another rope extension">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">YaRN</span>
+                <span class="term-zh">Yet Another RoPE Extension</span>
+            </div>
+            <span class="term-tag tag-arch">架構</span>
+        </div>
+        <div class="term-body">
+            一種讓模型處理比訓練時更長的上下文的技術。Qwen3.6-35B-A3B 原生支援 262K tokens，但透過 YaRN 可以延伸到約 <strong>1,010,000 tokens</strong>（超過 100 萬！）。原理是動態調整位置編碼的頻率。
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- MoE 專家系統 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-moe">
+    <div class="cat-header">
+        <span class="cat-icon">⚡</span>
+        <span class="cat-title">MoE 專家系統</span>
+        <span class="cat-count">7 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="moe mixture of experts 混合專家模型 混合專家">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">MoE (Mixture of Experts)</span>
+                <span class="term-zh">混合專家模型</span>
+            </div>
+            <span class="term-tag tag-arch">核心</span>
+        </div>
+        <div class="term-body">
+            <strong>這是整個部署計畫的核心概念！</strong>傳統模型（Dense Model）每一個 token 都要經過所有參數計算。MoE 模型則把 FFN 部分拆成很多個「<strong>Expert（專家）</strong>」，每個 token 只挑選少數幾個 Expert 來處理。
+            <br><br>
+            Qwen3.6-35B-A3B：<strong>256 個 Expert，每次只啟用 8+1 個</strong>。所以雖然有 35B 參數，每個 token 只用到 ~3B。
+            <div class="diagram-box">┌─────────────────────────────────────────────┐
+│          模型的每一層（共 40 層）              │
+│                                             │
+│  ┌─────────────┐    ┌──────────────────────┐│
+│  │ Attention    │ →  │ MoE FFN              ││
+│  │ (注意力)     │    │                      ││
+│  │ 每次全部執行  │    │  Expert 0  ← 選中!   ││
+│  │              │    │  Expert 1            ││
+│  │              │    │  Expert 2  ← 選中!   ││
+│  │              │    │  ...                 ││
+│  │              │    │  Expert 255          ││
+│  │              │    │  共 256 個，只啟用 8+1 ││
+│  └─────────────┘    └──────────────────────┘│
+└─────────────────────────────────────────────┘</div>
+            <div class="analogy">就像一家大醫院有 256 個專科醫生。你來看病時，掛號台（Router）只會幫你安排 8 個最對口的醫生會診，而不是讓 256 個醫生都來看你。這樣醫院的容量可以很大（35B 參數），但每次看診的成本很低（只用 3B）。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="expert 專家">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Expert</span>
+                <span class="term-zh">專家</span>
+            </div>
+            <span class="term-tag tag-arch">MoE</span>
+        </div>
+        <div class="term-body">
+            MoE 模型中的基本計算單元。每個 Expert 就是一個獨立的小型 FFN 網路，包含 <code>Up</code>、<code>Down</code>、<code>Gate</code> 三個矩陣。它們各自「專精」於處理不同類型的知識。在 Qwen3.6-35B-A3B 中，每個 Expert 的中間維度是 <strong>512</strong>。
+            <div class="analogy">就像醫院裡的專科醫生。心臟科醫生擅長心臟問題，骨科醫生擅長骨頭問題。模型裡的 Expert 也是如此，有的擅長處理程式碼，有的擅長處理數學，有的擅長處理中文。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="router routing 路由器 路由">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Router / Routing</span>
+                <span class="term-zh">路由器 / 路由</span>
+            </div>
+            <span class="term-tag tag-arch">MoE</span>
+        </div>
+        <div class="term-body">
+            MoE 模型中負責「選專家」的機制。每當一個 token 到達 MoE 層時，Router 會根據 token 的特徵，從 256 個 Expert 中選出最適合的 <strong>8 個</strong>來處理這個 token。Router 本身是一個很小的神經網路。
+            <div class="analogy">醫院的掛號台/分診台。病人（token）進來後，分診台（Router）判斷你的症狀，把你分配給最對口的醫生（Expert）。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="shared expert 共享專家">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Shared Expert</span>
+                <span class="term-zh">共享專家</span>
+            </div>
+            <span class="term-tag tag-arch">MoE</span>
+        </div>
+        <div class="term-body">
+            一個<strong>每次都會被啟用</strong>的特殊 Expert。不管 Router 選了哪 8 個 Expert，Shared Expert 都會參與計算。它負責處理所有 token 都需要的「通用知識」（如基本語法），所以每次實際啟用的是 <strong>8 路由 + 1 共享 = 9 個 Expert</strong>。
+            <div class="analogy">就像醫院裡的全科醫師（家庭醫學科），不管你什麼病都會先經過他。然後再配上 8 個專科醫師做會診。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="active parameters 活躍參數 啟用參數">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Active Parameters</span>
+                <span class="term-zh">每 Token 啟用參數</span>
+            </div>
+            <span class="term-tag tag-arch">MoE</span>
+        </div>
+        <div class="term-body">
+            MoE 模型中，每個 token 實際「用到」的參數量。Qwen3.6-35B-A3B 的 Active Parameters 是 <strong>~3B</strong>。這代表它的<strong>計算速度等同於一個 3B 的小模型</strong>，但品質接近 35B，因為所有 256 個 Expert 的知識都可以被調用。
+            <div class="analogy">一本百科全書有 35 冊（35B 參數），但你查一個問題只需要翻 3 冊（3B 活躍參數）。查閱速度很快，但背後有完整的百科知識庫在支撐你的答案品質。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="dense model dense layer 稠密模型 稠密層 密集">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Dense Model / Dense Layer</span>
+                <span class="term-zh">稠密模型 / 稠密層</span>
+            </div>
+            <span class="term-tag tag-arch">MoE</span>
+        </div>
+        <div class="term-body">
+            <strong>Dense</strong>（稠密）= 每個 token 都經過所有參數計算，沒有「跳過」任何部分。和 MoE（Sparse，稀疏）相對。<br>
+            在 Qwen3.6-35B-A3B 中，Attention 層是「Dense」的（每次都全部執行），而 FFN 層是「Sparse/MoE」的（只用 9/256 個 Expert）。<br>
+            部署計畫中說的「<strong>Dense 層放 GPU，Expert 放 CPU</strong>」就是指：把每次都要用的 Attention 放在快速的 GPU 上，不常用的 Expert 放在大容量的 RAM 裡。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="zipf's law zipf law 齊夫定律 冪律分佈 長尾分佈">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Zipf's Law</span>
+                <span class="term-zh">齊夫定律</span>
+            </div>
+            <span class="term-tag tag-arch">MoE</span>
+        </div>
+        <div class="term-body">
+            一個統計規律：少數 Expert 被使用的頻率遠高於其他 Expert。大約 <strong>15–20% 的「熱門 Expert」處理了 80% 的 token</strong>。這個特性讓「Expert 快取」策略成為可能——只要把最常用的幾個 Expert 放在 GPU 快取中，就能避免大部分的 CPU↔GPU 資料傳輸。
+            <div class="analogy">就像你手機裡裝了 200 個 App，但 80% 的時間你只用 LINE、YouTube、Chrome 這幾個。所以把這些常用 App 放在手機桌面（GPU 快取），其他的放在 App 資料夾裡（CPU RAM）就好。</div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 注意力機制 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-attn">
+    <div class="cat-header">
+        <span class="cat-icon">🧠</span>
+        <span class="cat-title">注意力機制</span>
+        <span class="cat-count">8 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="attention self-attention 自注意力 注意力機制">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Self-Attention</span>
+                <span class="term-zh">自注意力機制</span>
+            </div>
+            <span class="term-tag tag-arch">注意力</span>
+        </div>
+        <div class="term-body">
+            Transformer 的核心。讓模型在處理每個 token 時，計算它和所有其他 token 之間的「相關程度」。比如在「貓追老鼠」這句話中，「追」和「貓」的關聯度高（因為貓是主詞）。
+            <br><br>具體來說，每個 token 會被轉換成三個向量：<strong>Q（Query，問題）</strong>、<strong>K（Key，鑰匙）</strong>、<strong>V（Value，答案）</strong>。Q 和所有的 K 做比對，得到「注意力分數」，再用這個分數加權取 V 的結果。
+            <div class="diagram-box">Token "追" 的處理過程：
+
+Q("追") × K("貓") = 0.8  ← 高度相關！
+Q("追") × K("老鼠") = 0.7  ← 相關
+Q("追") × K("。") = 0.1  ← 不太相關
+
+最終 "追" 的理解 = 0.8×V("貓") + 0.7×V("老鼠") + 0.1×V("。")</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="kv cache key value cache 鍵值快取">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">KV Cache</span>
+                <span class="term-zh">鍵值快取</span>
+            </div>
+            <span class="term-tag tag-mem">核心</span>
+        </div>
+        <div class="term-body">
+            <strong>部署計畫中最重要的記憶體消耗者之一。</strong>模型在生成回覆時，每生成一個新 token 都需要參考之前所有 token 的 K 和 V 向量。如果每次都重新計算，效率太低。所以把之前算好的 K 和 V 存起來，這就是 KV Cache。
+            <br><br>
+            <strong>KV Cache 會隨著 context 長度線性增長。</strong>context 越長，需要存的 K 和 V 就越多。Qwen3.6-35B-A3B 的優勢是只有 <strong>10 層</strong>需要 KV Cache（Gated Attention 層），其他 30 層用的是固定大小的 DeltaNet State。
+            <div class="analogy">你在寫一篇很長的文章。每寫一個新句子，你都需要回頭看之前寫了什麼（確保前後連貫）。KV Cache 就像你的草稿紙——把之前寫過的重點摘錄下來，這樣不用每次都從頭讀整篇文章。文章越長，草稿紙就越厚。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="attention head 注意力頭 head 頭">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Attention Head</span>
+                <span class="term-zh">注意力頭</span>
+            </div>
+            <span class="term-tag tag-arch">注意力</span>
+        </div>
+        <div class="term-body">
+            注意力機制被拆分成多個平行的「頭」，每個頭獨立計算注意力，然後合併結果。不同的頭可以學到不同種類的關係：有的學語法，有的學語義，有的學位置關係。
+            <br><br>
+            Qwen3.6-35B-A3B 的 Gated Attention 層有 <strong>16 個 Q Head</strong>。
+            <div class="analogy">就像同時派 16 個偵探去調查同一個案件，每個偵探關注不同的線索。最後把 16 個偵探的發現合在一起，就能得到最全面的結論。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="head dimension head dim 頭維度">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Head Dimension</span>
+                <span class="term-zh">頭維度</span>
+            </div>
+            <span class="term-tag tag-arch">注意力</span>
+        </div>
+        <div class="term-body">
+            每個注意力頭內部的向量大小。Qwen3.6-35B-A3B 的 Gated Attention 使用 head dim = <strong>256</strong>，代表每個頭用 256 個數字來描述 Q、K、V 向量。head dim 直接影響 KV Cache 的大小。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="gqa grouped query attention 分組查詢注意力 kv heads">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">GQA / KV Heads</span>
+                <span class="term-zh">分組查詢注意力</span>
+            </div>
+            <span class="term-tag tag-arch">注意力</span>
+        </div>
+        <div class="term-body">
+            <strong>Grouped Query Attention</strong>。一種節省記憶體的注意力變體。標準注意力中，Q、K、V 的頭數相同。GQA 讓多個 Q Head 共用同一組 K 和 V Head。<br><br>
+            Qwen3.6-35B-A3B：<strong>16 個 Q Head，但只有 2 個 KV Head</strong>。這代表 KV Cache 只需要存 2 個頭的資料（而不是 16 個），<strong>節省 8 倍記憶體</strong>。
+            <div class="analogy">16 個學生（Q Head）在考試，但不需要每人一本教科書（KV）——只需要 2 本共用的教科書就夠了。省書（記憶體）！</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="gated deltanet deltanet 線性注意力 linear attention recurrent state">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Gated DeltaNet</span>
+                <span class="term-zh">門控 DeltaNet（線性注意力）</span>
+            </div>
+            <span class="term-tag tag-arch">注意力</span>
+        </div>
+        <div class="term-body">
+            Qwen3.6-35B-A3B 中佔 <strong>30/40 層</strong>的注意力機制。和標準注意力不同，它使用「<strong>Recurrent State</strong>」（循環狀態）而非 KV Cache。關鍵特性：
+            <br>• <strong>狀態大小是固定的</strong>（~2 MiB/層），不會隨 context 長度增長
+            <br>• 計算複雜度是 O(n) 而非 O(n²)，處理長文本更快
+            <br>• 30 層 × 2 MiB = <strong>只佔 ~60 MiB</strong>，不管 context 是 4K 還是 262K
+            <div class="analogy">標準注意力像一個筆記狂——每聽到一句話就抄一整頁筆記（KV Cache），聽越多筆記越厚。DeltaNet 像一個有超強記憶力的人——不抄筆記，只在腦子裡維護一個固定大小的「總結」。不管聽了多少，腦子裡的「總結」永遠只有那麼大。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="gated attention 門控注意力 標準注意力 全注意力">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Gated Attention</span>
+                <span class="term-zh">門控注意力（標準注意力）</span>
+            </div>
+            <span class="term-tag tag-arch">注意力</span>
+        </div>
+        <div class="term-body">
+            Qwen3.6-35B-A3B 中佔 <strong>10/40 層</strong>的注意力機制。和傳統 Self-Attention 類似，使用完整的 Q/K/V 計算，會產生 KV Cache。搭配 GQA（2 個 KV Head），這 10 層貢獻了模型所有的 KV Cache 開銷。<br><br>
+            「Gated」表示加入了門控機制——讓模型自己學習「這層的結果應該保留多少」，提升訓練穩定性。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="flash attention fa">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Flash Attention</span>
+                <span class="term-zh">閃電注意力</span>
+            </div>
+            <span class="term-tag tag-perf">效能</span>
+        </div>
+        <div class="term-body">
+            一種讓注意力計算<strong>更快、更省記憶體</strong>的技術。標準注意力需要在記憶體中存放完整的注意力矩陣（大小 = context² × heads），Flash Attention 透過分塊計算避免這個巨大矩陣，大幅降低記憶體使用。在部署計畫中用 <code>--flash-attn</code> 開啟，<strong>必須啟用</strong>。
+            <div class="analogy">標準做法像把整張大地圖攤開在桌上一次看完（需要超大桌子）。Flash Attention 像把地圖折成小塊，一次只看一小塊，但看的順序很聰明，最終結果完全一樣，桌子卻只需要很小。</div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 量化技術 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-quant">
+    <div class="cat-header">
+        <span class="cat-icon">🔬</span>
+        <span class="cat-title">量化技術</span>
+        <span class="cat-count">7 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="quantization 量化 quant">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Quantization</span>
+                <span class="term-zh">量化</span>
+            </div>
+            <span class="term-tag tag-quant">核心</span>
+        </div>
+        <div class="term-body">
+            <strong>把模型的參數從高精度數字壓縮成低精度數字</strong>，以減少儲存空間和計算量。原始模型用 BF16（每個數字佔 16 bit = 2 bytes），量化到 Q4 就是壓縮成 4 bit = 0.5 bytes。<strong>壓縮 4 倍</strong>，代價是少量精度損失。
+            <div class="diagram-box">精度等級         每參數位元   模型大小(35B)   品質
+─────────────────────────────────────────────────
+BF16 (原始)       16 bit      ~71 GB        100%
+Q8_0             8 bit       ~38 GB        ~99%
+Q6_K             6 bit       ~31 GB        ~97%
+Q5_K_M           5 bit       ~26 GB        ~95%
+Q4_K_M ⭐        4 bit       ~21 GB        ~92%  ← 推薦
+Q3_K_S           3 bit       ~14 GB        ~85%
+Q2_K             2 bit       ~13 GB        ~70%</div>
+            <div class="analogy">就像把高畫質照片（原圖 10MB）壓縮成 JPEG。壓縮到 2.5MB 你幾乎看不出差別（Q4），壓縮到 1MB 開始有點糊（Q2）。重點是找到「壓到多小還能接受」的平衡點。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="gguf ggml">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">GGUF</span>
+                <span class="term-zh">GGML 通用檔案格式</span>
+            </div>
+            <span class="term-tag tag-quant">格式</span>
+        </div>
+        <div class="term-body">
+            <strong>llama.cpp 專用的模型檔案格式</strong>。全名 <strong>GGML Universal File</strong>（GGML 是 llama.cpp 底層的計算引擎名稱）。一個 <code>.gguf</code> 檔案包含了模型的所有權重、量化參數和架構資訊。你下載的 <code>Qwen3.6-35B-A3B-Q4_K_M.gguf</code> 就是這種格式。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="q4_k_m q4 q3 q5 q6 q8 k_m k_s k_xl bit quant 位元量化">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Q4_K_M, Q3_K_S, Q5_K_M…</span>
+                <span class="term-zh">量化等級命名</span>
+            </div>
+            <span class="term-tag tag-quant">格式</span>
+        </div>
+        <div class="term-body">
+            GGUF 量化的命名規則：
+            <br>• <strong>Q4</strong> = 4-bit 量化（數字代表每個參數的位元數）
+            <br>• <strong>K</strong> = K-quant 方法（使用超級塊結構，比舊式更好）
+            <br>• <strong>M / S / XL</strong> = 大小變體。<strong>M</strong>（Medium）= 中等品質平衡；<strong>S</strong>（Small）= 更小檔案但品質更低；<strong>XL</strong> = 部分層保持更高精度
+            <br><br>
+            <strong>Q4_K_M</strong> 就是「4-bit K-quant 方法，中等品質平衡版」。這是社群公認的<strong>甜蜜點</strong>。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="bf16 fp16 fp32 浮點數 精度">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">BF16 / FP16 / FP32</span>
+                <span class="term-zh">浮點數精度格式</span>
+            </div>
+            <span class="term-tag tag-quant">精度</span>
+        </div>
+        <div class="term-body">
+            數字的儲存精度：
+            <br>• <strong>FP32</strong>（32-bit 浮點）= 最高精度，每個數字佔 4 bytes
+            <br>• <strong>FP16</strong>（16-bit 浮點）= 半精度，每個數字佔 2 bytes
+            <br>• <strong>BF16</strong>（Brain Float 16）= Google 發明的特殊 16-bit 格式，範圍和 FP32 一樣大但精度略低，<strong>訓練和推理的事實標準</strong>
+            <br><br>
+            模型原始用 BF16 訓練（~71 GB），量化就是把 BF16 壓成 Q4（每參數 4 bit = 0.5 bytes）等更小的格式。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="ud unsloth dynamic 動態量化">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">UD (Unsloth Dynamic)</span>
+                <span class="term-zh">Unsloth 動態量化</span>
+            </div>
+            <span class="term-tag tag-quant">進階</span>
+        </div>
+        <div class="term-body">
+            由 Unsloth 團隊開發的進階量化方法。<strong>不是所有層都用同樣的精度</strong>——它會分析每一層的重要程度，對重要的層（如 Router、早期 Attention 層）保持更高精度，對不重要的層用更低精度。結果是<strong>在相同檔案大小下，品質比普通量化更好</strong>。
+            <div class="analogy">就像修照片時，把人臉（重要部分）保留高畫質，背景（不重要部分）壓縮多一點。整張照片大小差不多，但看起來更好。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="imatrix importance matrix 重要性矩陣">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">imatrix (Importance Matrix)</span>
+                <span class="term-zh">重要性矩陣</span>
+            </div>
+            <span class="term-tag tag-quant">進階</span>
+        </div>
+        <div class="term-body">
+            量化時用來衡量「哪些參數比較重要」的參考資料。透過在校準資料集上做一次推理，統計每個參數對輸出的影響程度。量化時對重要的參數保留更多精度，不重要的壓縮更多。使用 imatrix 的量化版本通常品質更好。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="mtp multi-token prediction 多令牌預測 多token預測 投機解碼 speculative decoding draft">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">MTP / Speculative Decoding</span>
+                <span class="term-zh">多 Token 預測 / 投機解碼</span>
+            </div>
+            <span class="term-tag tag-perf">加速</span>
+        </div>
+        <div class="term-body">
+            <strong>Multi-Token Prediction</strong>。傳統模型一次只能生成 1 個 token（需要做一次完整的前向傳播）。MTP 讓模型<strong>一次預測 2-3 個 token</strong>，然後再驗證這些預測是否正確。如果預測對了，就等於一次省了好幾次前向傳播。
+            <br><br>
+            Qwen3.6 <strong>原生支援 MTP</strong>——模型本身就內建了預測頭，不需要額外的小模型。用 <code>--spec-type draft-mtp</code> 啟用，可加速 <strong>1.4–2.2 倍</strong>。
+            <div class="analogy">普通打字：一個字一個字敲。MTP：先猜接下來幾個字，一次打出來，然後檢查猜得對不對。猜對了就省時間（接受率 >80%），猜錯了就回頭改。對於常見的句式（「你好，請問」），猜中率極高。</div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 記憶體管理 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-mem">
+    <div class="cat-header">
+        <span class="cat-icon">💾</span>
+        <span class="cat-title">記憶體管理</span>
+        <span class="cat-count">7 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="vram video ram 顯示記憶體 顯存">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">VRAM</span>
+                <span class="term-zh">顯示記憶體 / 顯存</span>
+            </div>
+            <span class="term-tag tag-hw">硬體</span>
+        </div>
+        <div class="term-body">
+            <strong>Video RAM</strong>，顯示卡（GPU）上的專用記憶體。RTX 3070 Ti 有 <strong>8 GB VRAM</strong>。VRAM 的速度比系統 RAM 快很多倍（~600 GB/s vs ~50 GB/s），所以把資料放在 VRAM 裡計算速度最快。但 <strong>8 GB 非常小</strong>，整個模型放不下，所以才需要各種卸載策略。
+            <div class="analogy">VRAM = 你辦公桌上的空間（很小但伸手就到，效率最高）。RAM = 辦公室的書架（大很多但要走幾步路去拿）。我們的目標是把最常用的東西放桌上，其他的放書架。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="ram system ram 系統記憶體 主記憶體 記憶體">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">System RAM</span>
+                <span class="term-zh">系統記憶體</span>
+            </div>
+            <span class="term-tag tag-hw">硬體</span>
+        </div>
+        <div class="term-body">
+            電腦主機板上的記憶體，你有 <strong>72 GB</strong>。比 VRAM 慢但大得多。在我們的部署方案中，所有 MoE Expert 權重都放在 RAM 中（~20 GB），由 CPU 負責計算。72 GB 非常充裕，是這次部署的<strong>秘密武器</strong>。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="oom out of memory 記憶體不足 溢出">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">OOM (Out of Memory)</span>
+                <span class="term-zh">記憶體不足</span>
+            </div>
+            <span class="term-tag tag-mem">錯誤</span>
+        </div>
+        <div class="term-body">
+            程式需要的記憶體超過了硬體可用量，導致崩潰。在 AI 部署中最常見的就是 <strong>VRAM OOM</strong>——模型權重 + KV Cache + 計算暫存超過了 8 GB VRAM。我們的所有優化策略本質上都是在<strong>避免 OOM</strong>。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="mmap memory map 記憶體映射">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">mmap (Memory Map)</span>
+                <span class="term-zh">記憶體映射</span>
+            </div>
+            <span class="term-tag tag-mem">記憶體</span>
+        </div>
+        <div class="term-body">
+            一種讓作業系統「假裝」檔案已經載入記憶體的技術。實際上只有被存取到的部分才會真正讀入 RAM。好處是啟動快（不需要一次讀完整個 21 GB 的檔案），壞處是推理過程中可能會因為「<strong>Page Fault</strong>」（還沒載入的部分被存取到）而突然卡頓。
+            <br><br>在 Windows 上建議用 <code>--no-mmap</code> 關閉它，改為一次性完整載入（反正你有 72 GB RAM 夠用）。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="mlock 鎖定記憶體 lock 記憶體鎖定">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">mlock</span>
+                <span class="term-zh">記憶體鎖定</span>
+            </div>
+            <span class="term-tag tag-mem">記憶體</span>
+        </div>
+        <div class="term-body">
+            告訴作業系統：「<strong>不要把這塊記憶體的資料換出去</strong>」。正常情況下，如果 RAM 不夠用，Windows 會把不常用的資料換到硬碟上（Pagefile），這叫「Swap」。但 swap 速度極慢（SSD ~5 GB/s vs RAM ~50 GB/s），會讓推理嚴重卡頓。<code>--mlock</code> 保證模型權重永遠留在 RAM 中。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="activation vector activation buffer 激活向量 激活暫存">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Activation Vector / Buffer</span>
+                <span class="term-zh">激活向量 / 計算暫存</span>
+            </div>
+            <span class="term-tag tag-mem">記憶體</span>
+        </div>
+        <div class="term-body">
+            模型推理過程中，每一層的計算<strong>中間結果</strong>。一個 token 經過某一層的計算後，產出的結果向量就是「Activation」。它會被傳遞給下一層作為輸入。<br><br>
+            在 <code>--cpu-moe</code> 模式下，<strong>只有這個極小的 Activation Vector（~4-16 KB）會透過 PCIe 在 GPU 和 CPU 之間傳輸</strong>，而不是搬運幾 GB 的 Expert 權重。這就是為什麼 MoE 卸載可以這麼高效。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="expert cache cache slot 專家快取 快取 lfu least frequently used">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Expert Cache / LFU</span>
+                <span class="term-zh">專家快取 / 最低頻率淘汰</span>
+            </div>
+            <span class="term-tag tag-mem">記憶體</span>
+        </div>
+        <div class="term-body">
+            在 GPU VRAM 中保留一小塊空間，用來快取最常被 Router 選中的「熱門 Expert」。當路由到的 Expert 剛好在快取中時，直接在 GPU 上計算（<strong>零延遲</strong>）。只有快取中沒有時，才需要走慢速的 CPU 路徑。
+            <br><br>
+            <strong>LFU（Least Frequently Used）</strong>= 淘汰策略。當快取滿了需要騰出空間時，淘汰使用次數最少的 Expert。用 <code>--moe-expert-cache-size 8</code> 設定快取 8 個 Expert。
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 硬體相關 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-hw">
+    <div class="cat-header">
+        <span class="cat-icon">💻</span>
+        <span class="cat-title">硬體相關</span>
+        <span class="cat-count">5 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="gpu graphics processing unit 顯示卡 顯卡 圖形處理器">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">GPU</span>
+                <span class="term-zh">圖形處理器 / 顯示卡</span>
+            </div>
+            <span class="term-tag tag-hw">硬體</span>
+        </div>
+        <div class="term-body">
+            <strong>Graphics Processing Unit</strong>。原本設計來畫圖形（3D 遊戲），但因為它擅長做大量平行的數學計算（矩陣乘法），被拿來跑 AI 模型。RTX 3070 Ti 雖然 VRAM 只有 8 GB，但它的計算速度（FLOPS）仍然比 CPU 快幾十倍。
+            <div class="analogy">CPU 像一個超級聰明但只有一隻手的人（一次只做一件事但做得很精確）。GPU 像一群普通人有幾千隻手（每隻手只能做簡單的加減乘除，但同時做幾千個）。AI 推理恰好需要做大量簡單的乘法，所以 GPU 完勝。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="pcie pci express 匯流排 頻寬">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">PCIe (PCI Express)</span>
+                <span class="term-zh">匯流排</span>
+            </div>
+            <span class="term-tag tag-hw">硬體</span>
+        </div>
+        <div class="term-body">
+            連接 GPU 和 CPU/RAM 之間的「高速公路」。RTX 3070 Ti 使用 <strong>PCIe 4.0 x16</strong>，理論頻寬 ~32 GB/s，實際約 25 GB/s。在 MoE 卸載中，<strong>PCIe 並非瓶頸</strong>——因為只傳輸極小的 Activation Vector，不是搬運整個 Expert 權重。
+            <div class="analogy">GPU 和 CPU 分別在城市的兩端。PCIe 就是連接它們的高速公路。我們的策略不是把整棟大樓搬過去（搬 Expert 權重），而是只用快遞寄一封信（Activation Vector），所以高速公路完全不會塞車。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="compute capability sm streaming multiprocessor 計算能力 sm86">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Compute Capability</span>
+                <span class="term-zh">計算能力版本</span>
+            </div>
+            <span class="term-tag tag-hw">硬體</span>
+        </div>
+        <div class="term-body">
+            NVIDIA GPU 的「世代代碼」。決定了 GPU 支援哪些計算功能。RTX 3070 Ti 的 Compute Capability 是 <strong>8.6</strong>（Ampere 架構）。編譯 llama.cpp 時需要告訴 CMake 這個數字（<code>-DCMAKE_CUDA_ARCHITECTURES=86</code>），這樣編譯器才能生成最適合這張卡的機器碼。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="nvme ssd 固態硬碟">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">NVMe SSD</span>
+                <span class="term-zh">固態硬碟</span>
+            </div>
+            <span class="term-tag tag-hw">硬體</span>
+        </div>
+        <div class="term-body">
+            模型 GGUF 檔案存放的地方。NVMe SSD 的讀取速度約 5-7 GB/s，模型啟動時會從 SSD 載入到 RAM。21 GB 的模型檔案大約 3-4 秒就能讀完。比傳統硬碟（~150 MB/s）快 30-40 倍。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="memory bandwidth 記憶體頻寬">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Memory Bandwidth</span>
+                <span class="term-zh">記憶體頻寬</span>
+            </div>
+            <span class="term-tag tag-hw">硬體</span>
+        </div>
+        <div class="term-body">
+            記憶體每秒能傳輸多少資料。LLM 推理（尤其是 token 生成階段）主要受限於記憶體頻寬而非算力。RTX 3070 Ti 的 VRAM 頻寬 ~600 GB/s，系統 RAM（DDR4）約 ~40-50 GB/s。<strong>RAM 頻寬是 MoE CPU 卸載時的實際瓶頸。</strong>
+            <div class="analogy">頻寬就像水管的粗細。VRAM 是粗水管（每秒 600 升），RAM 是細水管（每秒 50 升）。Expert 在 CPU/RAM 計算時，資料流過的是細水管，所以速度會比全放 GPU 慢。</div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- llama.cpp 參數 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-param">
+    <div class="cat-header">
+        <span class="cat-icon">⚙️</span>
+        <span class="cat-title">llama.cpp 參數</span>
+        <span class="cat-count">8 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="llama.cpp llama cpp llamacpp 推理引擎">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">llama.cpp</span>
+                <span class="term-zh">推理引擎</span>
+            </div>
+            <span class="term-tag tag-param">工具</span>
+        </div>
+        <div class="term-body">
+            用 C/C++ 寫的<strong>開源 LLM 推理引擎</strong>。由 Georgi Gerganov 開發。它可以在各種硬體上運行 GGUF 格式的模型——從手機到伺服器都行。是目前社群最流行的本地端 LLM 推理方案，特別擅長在消費級硬體上跑大模型。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="ngl n-gpu-layers gpu layers 層卸載">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">-ngl / --n-gpu-layers</span>
+                <span class="term-zh">GPU 層數</span>
+            </div>
+            <span class="term-tag tag-param">參數</span>
+        </div>
+        <div class="term-body">
+            指定要把多少層放到 GPU 上計算。設為 <strong>99</strong>（或任何超過實際層數的值）= 盡可能多的層放 GPU。搭配 <code>--cpu-moe</code> 使用時，它指的是「Dense 部分」的層數。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="cpu-moe n-cpu-moe expert offload 卸載 cpu moe 專家卸載">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">--cpu-moe / --n-cpu-moe</span>
+                <span class="term-zh">MoE 專家卸載至 CPU</span>
+            </div>
+            <span class="term-tag tag-param">核心參數</span>
+        </div>
+        <div class="term-body">
+            <strong>這次部署最關鍵的參數！</strong>告訴 llama.cpp：「把 MoE 的 Expert FFN 權重放在 CPU RAM，不要佔 GPU VRAM」。
+            <br>• <code>--cpu-moe</code> = 所有層的 Expert 都放 CPU
+            <br>• <code>--n-cpu-moe 35</code> = 前 35 層的 Expert 放 CPU（其餘留 GPU）
+            <br><br>
+            這讓 8 GB VRAM 只需要裝 Dense 層（~2-3 GB），剩餘空間留給 KV Cache 和計算暫存。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="cache-type-k cache-type-v ctk ctv kv cache quantization kv量化">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">--cache-type-k / --cache-type-v</span>
+                <span class="term-zh">KV Cache 量化類型</span>
+            </div>
+            <span class="term-tag tag-param">參數</span>
+        </div>
+        <div class="term-body">
+            控制 KV Cache 的儲存精度。可選 <code>f16</code>（最高品質）、<code>q8_0</code>（減半大小）、<code>q4_0</code>（四分之一大小）。我們推薦 <code>q8_0</code>：品質幾乎無損，記憶體減半。在極長上下文（262K）下可用 <code>q4_0</code> 進一步壓縮。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="batch size ubatch size 批次大小 微批次">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">-b / -ub (Batch Size)</span>
+                <span class="term-zh">批次大小 / 微批次大小</span>
+            </div>
+            <span class="term-tag tag-param">參數</span>
+        </div>
+        <div class="term-body">
+            <strong>-b (batch size)</strong>：處理你輸入的 prompt 時，一次處理多少 token。<strong>-ub (ubatch size)</strong>：每次實際送進 GPU kernel 的 token 數。<br><br>
+            <code>-b 2048</code> 代表一次讀取 2048 個 prompt token，<code>-ub 512</code> 代表分 4 次送進 GPU（每次 512 個）。ub 越小，VRAM 峰值越低但速度越慢。VRAM 緊張時可調低 ub。
+            <div class="analogy">你要搬 2048 本書（prompt tokens）進房間（GPU）。-b=2048 是總共要搬的量，-ub=512 是每趟搬幾本。每趟搬少一點（512），佔用的搬運空間（VRAM）就少一點。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="ctx-size context size 上下文大小">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">-c / --ctx-size</span>
+                <span class="term-zh">上下文大小</span>
+            </div>
+            <span class="term-tag tag-param">參數</span>
+        </div>
+        <div class="term-body">
+            設定這次會話允許的最大 token 數。<code>-c 32768</code> = 最多 32K tokens。這個值直接決定 KV Cache 要分配多少記憶體。設太大會 OOM，設太小會限制模型能「記住」的對話長度。建議從 32K 開始，按需調整。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="threads 執行緒 線程 thread">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">-t / --threads</span>
+                <span class="term-zh">CPU 執行緒數</span>
+            </div>
+            <span class="term-tag tag-param">參數</span>
+        </div>
+        <div class="term-body">
+            CPU 用多少個線程來做計算。應設為 CPU 的<strong>物理核心數</strong>（不是邏輯線程數 / 超線程數）。例如 8 核 16 線程的 CPU，設 <code>-t 8</code>。設太多反而會因為線程搶資源而變慢。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="cont-batching continuous batching 連續批次處理">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">--cont-batching</span>
+                <span class="term-zh">連續批次處理</span>
+            </div>
+            <span class="term-tag tag-param">參數</span>
+        </div>
+        <div class="term-body">
+            Server 模式下，讓多個使用者的請求在同一時間共用 GPU 計算。不開的話，一次只能服務一個使用者；開了之後，可以把多個使用者的 token 合併成一個批次一起處理，提高 GPU 利用率。
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 效能指標 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-perf">
+    <div class="cat-header">
+        <span class="cat-icon">📈</span>
+        <span class="cat-title">效能指標</span>
+        <span class="cat-count">4 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="tokens per second t/s tok/s 每秒令牌數 生成速度">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Tokens per Second (t/s)</span>
+                <span class="term-zh">每秒 Token 數</span>
+            </div>
+            <span class="term-tag tag-perf">效能</span>
+        </div>
+        <div class="term-body">
+            衡量模型回覆速度的核心指標。<strong>每秒能生成幾個 token</strong>。人類閱讀速度約 3–5 t/s，所以 >10 t/s 就能做到即時對話。我們的目標是在 32K context 下達到 <strong>30–60 t/s</strong>。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="prompt processing prefill pp 提示處理 預填充">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Prompt Processing / Prefill</span>
+                <span class="term-zh">提示處理 / 預填充</span>
+            </div>
+            <span class="term-tag tag-perf">效能</span>
+        </div>
+        <div class="term-body">
+            推理的第一階段：讀取並理解你輸入的所有文字。這個階段可以<strong>平行處理</strong>（一次算很多 token），所以速度受 batch size 和 GPU 算力影響。對長 prompt（如整篇文章），預填充可能需要幾秒到幾十秒。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="token generation tg decode 解碼 生成">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Token Generation / Decode</span>
+                <span class="term-zh">Token 生成 / 解碼</span>
+            </div>
+            <span class="term-tag tag-perf">效能</span>
+        </div>
+        <div class="term-body">
+            推理的第二階段：一個一個生成回覆的 token。這個階段是<strong>串行</strong>的（下一個 token 依賴上一個 token 的結果），速度主要受<strong>記憶體頻寬</strong>限制。這就是我們衡量 t/s 的階段。MTP 就是在這個階段做加速的。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="throughput latency 吞吐量 延遲">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Throughput / Latency</span>
+                <span class="term-zh">吞吐量 / 延遲</span>
+            </div>
+            <span class="term-tag tag-perf">效能</span>
+        </div>
+        <div class="term-body">
+            <strong>Throughput（吞吐量）</strong>= 單位時間內能處理多少工作量（如 tokens/s）。<br>
+            <strong>Latency（延遲）</strong>= 從送出請求到收到第一個回覆的等待時間。<br><br>
+            兩者通常是<strong>互相拉扯</strong>的：追求高吞吐量（合併多個請求）會增加單個請求的延遲。在單用戶場景下，我們優先追求低延遲。
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 取樣與生成 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-sample">
+    <div class="cat-header">
+        <span class="cat-icon">🎲</span>
+        <span class="cat-title">取樣與生成</span>
+        <span class="cat-count">4 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="temperature 溫度 temp">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Temperature</span>
+                <span class="term-zh">溫度</span>
+            </div>
+            <span class="term-tag tag-sample">取樣</span>
+        </div>
+        <div class="term-body">
+            控制模型回答的<strong>隨機程度</strong>。
+            <br>• <strong>溫度 = 0</strong>：完全確定性，永遠選機率最高的 token（像考試答標準答案）
+            <br>• <strong>溫度 = 0.6</strong>（推薦）：適度隨機，回答自然且有變化
+            <br>• <strong>溫度 = 1.0+</strong>：高度隨機，更有創意但可能胡說
+            <div class="analogy">點菜時：溫度=0 永遠點招牌菜；溫度=0.6 通常點喜歡的但偶爾嘗鮮；溫度=1.5 亂點一通，可能發現新大陸也可能踩雷。</div>
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="top-p nucleus sampling 核取樣">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Top-p (Nucleus Sampling)</span>
+                <span class="term-zh">核取樣</span>
+            </div>
+            <span class="term-tag tag-sample">取樣</span>
+        </div>
+        <div class="term-body">
+            只從「<strong>機率加總到 p</strong>」的候選 token 中選擇。<code>top-p 0.95</code> = 把所有 token 按機率從高到低排，只保留加總到 95% 的那些候選者，丟棄剩下的 5% 長尾（極不可能的 token）。這比固定的 top-k 更靈活——當模型很確定時候選者少，不確定時候選者多。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="top-k 頂K取樣">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Top-k</span>
+                <span class="term-zh">Top-K 取樣</span>
+            </div>
+            <span class="term-tag tag-sample">取樣</span>
+        </div>
+        <div class="term-body">
+            只保留機率最高的前 K 個候選 token，丟棄其餘。<code>top-k 20</code> = 只從排名前 20 的 token 中選一個。常和 top-p 搭配使用。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="jinja jinja2 模板 chat template">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Jinja / Chat Template</span>
+                <span class="term-zh">聊天模板</span>
+            </div>
+            <span class="term-tag tag-sample">格式</span>
+        </div>
+        <div class="term-body">
+            模型需要特定的對話格式才能正確理解「誰說了什麼」。Jinja2 是一種模板語言，用來把你的對話自動轉換成模型期望的格式（如加入 <code>&lt;|user|&gt;</code>、<code>&lt;|assistant|&gt;</code> 等特殊標記）。<code>--jinja</code> 讓 llama.cpp 自動讀取 GGUF 檔案內建的聊天模板。
+        </div>
+    </div>
+</section>
+
+<!-- ========================================== -->
+<!-- 編譯與工具 -->
+<!-- ========================================== -->
+<section class="cat-section" id="cat-build">
+    <div class="cat-header">
+        <span class="cat-icon">🔨</span>
+        <span class="cat-title">編譯與工具</span>
+        <span class="cat-count">5 個術語</span>
+    </div>
+
+    <div class="term-card" data-terms="cuda nvidia toolkit">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">CUDA / CUDA Toolkit</span>
+                <span class="term-zh">NVIDIA 平行計算平台</span>
+            </div>
+            <span class="term-tag tag-build">工具</span>
+        </div>
+        <div class="term-body">
+            NVIDIA 開發的<strong>平行計算平台和工具集</strong>。讓程式設計師能寫跑在 GPU 上的程式碼。<strong>CUDA Toolkit</strong> 包含了編譯器（nvcc）、數學函式庫（cuBLAS、cuDNN）等。llama.cpp 需要 CUDA 才能利用 GPU 加速。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="cmake 編譯系統 構建系統">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">CMake</span>
+                <span class="term-zh">跨平台編譯系統</span>
+            </div>
+            <span class="term-tag tag-build">工具</span>
+        </div>
+        <div class="term-body">
+            一個幫助你<strong>編譯 C/C++ 程式碼</strong>的工具。它不直接編譯，而是根據設定檔生成適合你系統的編譯指令。我們用 CMake 來設定 llama.cpp 的編譯選項（如開啟 CUDA、Flash Attention 等）。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="DGGML_CUDA DGGML_CUDA_FA DGGML_CUDA_FA_ALL_QUANTS cmake flag 編譯旗標">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">-DGGML_CUDA_FA_ALL_QUANTS=ON</span>
+                <span class="term-zh">編譯旗標</span>
+            </div>
+            <span class="term-tag tag-build">編譯</span>
+        </div>
+        <div class="term-body">
+            CMake 的編譯開關，告訴編譯器要啟用哪些功能：
+            <br>• <code>-DGGML_CUDA=ON</code> = 啟用 CUDA GPU 支援
+            <br>• <code>-DGGML_CUDA_FA=ON</code> = 啟用 Flash Attention
+            <br>• <code>-DGGML_CUDA_FA_ALL_QUANTS=ON</code> = 讓 Flash Attention 支援<strong>所有量化類型的 KV Cache</strong>
+            <br><br>
+            <strong>最後一個旗標非常重要！</strong>不開的話，使用 <code>q8_0</code> 或 <code>q4_0</code> KV Cache 時，計算會被強制回退到慢速的 CPU，速度大幅下降。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="visual studio msvc 編譯器">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Visual Studio 2022</span>
+                <span class="term-zh">開發環境 / C++ 編譯器</span>
+            </div>
+            <span class="term-tag tag-build">工具</span>
+        </div>
+        <div class="term-body">
+            微軟的整合開發環境。在 Windows 上編譯 llama.cpp 需要它提供的 <strong>C++ 編譯器（MSVC）</strong>和 <strong>Windows SDK</strong>。安裝時要勾選「使用 C++ 的桌面開發」工作負載。編譯時要使用它專屬的「Developer Command Prompt」。
+        </div>
+    </div>
+
+    <div class="term-card" data-terms="hugging face hf model hub 模型庫">
+        <div class="term-head">
+            <div class="term-name-row">
+                <span class="term-en">Hugging Face</span>
+                <span class="term-zh">模型託管平台</span>
+            </div>
+            <span class="term-tag tag-build">平台</span>
+        </div>
+        <div class="term-body">
+            AI 界的「GitHub」。全世界最大的開源 AI 模型託管平台，幾乎所有開源 LLM 都可以在這裡下載。我們要下載的 GGUF 模型就來自 Hugging Face 上的 <code>unsloth/Qwen3.6-35B-A3B-GGUF</code> 等倉庫。
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <p class="footer-text">
+        Qwen3.6-35B-A3B 部署計畫 — 術語百科全書<br>
+        共 70+ 個專有名詞，涵蓋基礎概念到進階調校<br>
+        <span style="color: var(--accent-indigo);">Generated with ⚡ by Antigravity</span>
+    </p>
+</footer>
+
+</div>
+
+
+
+
+    </div>
+
+
+    <!-- Tab 4: Performance Experiment Report -->
+    <div id="report-tab" class="tab-content">
+        <style>
+            .report-container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .report-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+                gap: 2rem;
+                margin-bottom: 4rem;
+                margin-top: 2rem;
+            }
+            .chart-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border-subtle);
+                border-radius: var(--radius-lg);
+                padding: 2.2rem;
+                backdrop-filter: blur(10px);
+                box-shadow: var(--shadow-card);
+                transition: all 0.3s;
+            }
+            .chart-card:hover {
+                border-color: var(--border-glow);
+                box-shadow: var(--shadow-glow);
+            }
+            .chart-title {
+                font-size: 1.15rem;
+                font-weight: 800;
+                margin-bottom: 1.5rem;
+                color: var(--accent-cyan);
+                border-left: 4px solid var(--accent-indigo);
+                padding-left: 0.6rem;
+            }
+            .chart-container {
+                position: relative;
+                height: 340px;
+                width: 100%;
+                margin-bottom: 1.5rem;
+            }
+            .report-insight {
+                background: rgba(14, 165, 233, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: var(--radius-md);
+                padding: 1.5rem;
+                color: var(--text-secondary);
+                font-size: 0.88rem;
+                line-height: 1.8;
+            }
+            .report-insight strong {
+                color: var(--text-primary);
+            }
+            .insight-badge {
+                display: inline-block;
+                font-size: 0.68rem;
+                font-weight: 700;
+                padding: 0.15rem 0.5rem;
+                border-radius: 100px;
+                background: rgba(6, 182, 212, 0.12);
+                color: var(--accent-cyan);
+                margin-bottom: 0.75rem;
+                border: 1px solid rgba(6, 182, 212, 0.2);
+            }
+        </style>
+        
+        <div class="main-content">
+            <section class="hero fade-in">
+                <div class="plan-hero-badge" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); color:var(--accent-cyan);">效能調優與多維往復實驗報告</div>
+                <h1 style="margin-top: 1rem;">
+                    <span class="gradient-text">物理極限壓榨實測</span><br>
+                    效能與往復尋優數據
+                </h1>
+                <p class="plan-hero-subtitle" style="margin-top: 1.5rem;">
+                    基於本機升級 64GB DDR4-3200 雙通道記憶體（實測頻寬達 33.46 GB/s）的最新實驗報告。<br>
+                    我們在頻寬解鎖後發現了全新的「CPU 反量化算力牆」，並透過 GPU 專家卸載調優成功突破了物理效能天花板。
+                </p>
+            </section>
+
+            <!-- STATS ROW -->
+            <div class="stats-row fade-in delay-1" style="margin-bottom: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-value cyan">35.02 t/s</div>
+                    <div class="stat-label">Q4 Peak TPS (MTP + ncmoe 35)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value violet">30.65 t/s</div>
+                    <div class="stat-label">Q3 Peak TPS (MTP + ncmoe 35)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value emerald">33.46 GB/s</div>
+                    <div class="stat-label">雙通道實測記憶體頻寬</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value rose">ncmoe 35/36</div>
+                    <div class="stat-label">GPU 專家卸載最佳甜點</div>
+                </div>
+            </div>
+
+            <!-- CHARTS GRID -->
+            <div class="report-grid fade-in delay-2">
+                <div class="chart-card">
+                    <div class="chart-title">📈 上下文長度對推理 TPS 的影響 (Context vs. TPS)</div>
+                    <div class="chart-container">
+                        <canvas id="contextTpsChart"></canvas>
+                    </div>
+                    <div class="report-insight">
+                        <span class="insight-badge">物理定律鐵壁</span><br>
+                        實測顯示，隨著 Context 從 512 增至 32768 (32K)，模型解碼速度仍能維持極高穩定性。<br>
+                        <strong>原理解析：</strong>解碼期瓶頸主要在於 CPU 載入 MoE 專家權重的頻寬。而長上下文產生的 KV Cache 運算（Self-Attention）完全由 GPU 負責。在雙通道頻寬 (33.46 GB/s) 配合下，只要 VRAM 不溢出，長上下文仍能保持無損的極致解碼速度。
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">📊 MTP 投機窗口長度對 TPS 的影響 (Spec-Window vs. TPS)</div>
+                    <div class="chart-container">
+                        <canvas id="mtpWindowChart"></canvas>
+                    </div>
+                    <div class="report-insight">
+                        <span class="insight-badge">投機黃金甜蜜點</span><br>
+                        實測證實，當 <code>spec_draft_n_max = 2</code> (投機 2 個 Token) 時速度最快。將其拉大到 3 或 4 時，速度反而大幅下降。<br>
+                        <strong>原原理剖析：</strong>35B 模型的草稿接受率在本地量化下約為 70%~77%。如果將投機窗口設為 4，雖然一次可能多產出 Token，但由於接受率不足導致頻繁觸發昂貴的<strong>「回退重算開銷 (Verification Fallback)」</strong>，多餘的驗證時間直接抵消了投機優勢。因此 <strong>2 是本機 MTP 部署的絕對黃金甜蜜點</strong>。
+                    </div>
+                </div>
+
+                <div class="chart-card" style="grid-column: span 2;">
+                    <div class="chart-title">⚔️ 混合推理模式與 CPU 算力牆突破 (CPU Bound vs. GPU Offload)</div>
+                    <div class="chart-container" style="height: 380px;">
+                        <canvas id="offloadPkChart"></canvas>
+                    </div>
+                    <div class="report-insight">
+                        <span class="insight-badge">算力牆與 GPU 卸載真相</span><br>
+                        雙通道解鎖後，記憶體複製頻寬提升了 **133.8%** (唯讀頻寬大增 454.9%)，但我們發現 3-bit 模型（Q3_K_M）的純 CPU 專家推理速度受限於 CPU 反量化算力瓶頸，未能完全釋放記憶體頻寬！<br>
+                        <strong>核心發現 — CPU 算力牆 (CPU Bound)：</strong>這是因為 3-bit 量化的解碼演算法更為複雜，CPU 在進行 <strong>AVX2/FMA 反量化（De-quantization）</strong> 時的運算延遲，已經完全蓋過了因為模型體積變小而節省的記憶體傳輸時間。此時限制速度的不再是「頻寬」，而是「CPU 的 FMA 算力」！<br>
+                        <strong>最佳化突破：</strong>我們精密壓榨 8GB 顯存空間，進行了 GPU 專家卸載（-ncmoe）網格搜尋。實測發現，將部分 MoE 專家卸載至 GPU（<code>-ncmoe 35</code>），能完美利用 GPU Tensor Cores 的強大矩陣算力<strong>抹平反量化開銷</strong>，成功打破 CPU 算力牆，使 Q4 滿血速度攀升至歷史最高的前台 **35.02 TPS**，Q3 達到 **30.65 TPS**！
+                    </div>
+                </div>
+            </div>
+    
+
+
+    <!-- Unified JavaScript -->
+    <script>
+        // ===== Main Tab Switcher =====
+        function switchMainTab(tabId) {
+            console.log("switchMainTab called for tab:", tabId);
+            try {
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(el => {
+                    el.classList.remove('active');
+                });
+                // Deactivate all tab buttons
+                document.querySelectorAll('.nav-tab').forEach(el => {
+                    el.classList.remove('active');
+                });
+
+                // Show active tab
+                const targetTab = document.getElementById(tabId + '-tab');
+                const targetBtn = document.getElementById('tab-btn-' + tabId);
+                
+                if (targetTab && targetBtn) {
+                    targetTab.classList.add('active');
+                    targetBtn.classList.add('active');
+
+                if (tabId === 'diagnostic' || tabId === 'report') {
+                    setTimeout(() => {
+                        initReportCharts();
+                    }, 50);
+                }                    console.log("Tab activated successfully:", tabId);
+                } else {
+                    console.error("Tab DOM element not found for:", tabId);
+                }
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'instant' });
+            } catch (err) {
+                console.error("Error switching tabs:", err);
+            }
+        }
+
+        // ===== Plan Script =====
+        
+    // ===== Layer Visual =====
+    function buildLayerVisual() {
+        const container = document.getElementById('layerVisual');
+        if (!container) return;
+        const layers = [];
+        for (let cycle = 0; cycle < 10; cycle++) {
+            layers.push({ type: 'deltanet', label: `D${cycle*4}` });
+            layers.push({ type: 'deltanet', label: `D${cycle*4+1}` });
+            layers.push({ type: 'deltanet', label: `D${cycle*4+2}` });
+            layers.push({ type: 'gated-attn', label: `A${cycle*4+3}` });
+        }
+        layers.forEach((l, i) => {
+            const div = document.createElement('div');
+            div.className = `layer-block ${l.type}`;
+            div.textContent = i;
+            div.title = l.type === 'deltanet' ? 
+                `Layer ${i}: Gated DeltaNet (Linear Attention)\n固定 State, 不產生 KV Cache` :
+                `Layer ${i}: Gated Attention (GQA)\n2 KV Heads, Head Dim 256\n會產生 KV Cache`;
+            container.appendChild(div);
+        });
+    }
+
+    // ===== Collapsible =====
+    function toggleCollapsible(header) {
+        header.classList.toggle('open');
+        const body = header.nextElementSibling;
+        body.classList.toggle('open');
+    }
+
+    // ===== Tabs =====
+    function switchTab(event, tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    // ===== Copy Code =====
+    function copyCode(button) {
+        const pre = button.closest('.code-block').querySelector('pre');
+        const text = pre.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            button.textContent = '已複製 ✓';
+            setTimeout(() => { button.textContent = '複製'; }, 2000);
+        });
+    }
+
+    // ===== Init =====
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOMContentLoaded: initializing components...");
+        try {
+            initReportCharts();
+        } catch (err) {
+            console.warn("Chart.js initialization failed (possibly offline or CDN load error):", err);
+        }
+        try {
+            buildLayerVisual();
+        } catch (err) {
+            console.error("Layer visual initialization failed:", err);
+        }
+
+        // Open first two collapsibles by default
+        const headers = document.querySelectorAll('.collapsible-header');
+        if (headers.length > 0) {
+            headers[0].classList.add('open');
+            headers[0].nextElementSibling.classList.add('open');
+        }
+
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+    });
+
+
+        // ===== Glossary Script =====
+        
+function filterTerms() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const cards = document.querySelectorAll('.term-card');
+    const sections = document.querySelectorAll('.cat-section');
+
+    cards.forEach(card => {
+        if (!query) {
+            card.classList.remove('hidden');
+            return;
+        }
+        const text = (
+            card.getAttribute('data-terms') + ' ' +
+            card.querySelector('.term-en')?.textContent + ' ' +
+            (card.querySelector('.term-zh')?.textContent || '') + ' ' +
+            card.querySelector('.term-body')?.textContent
+        ).toLowerCase();
+        card.classList.toggle('hidden', !text.includes(query));
+    });
+
+    // Hide empty sections
+    sections.forEach(section => {
+        const visibleCards = section.querySelectorAll('.term-card:not(.hidden)');
+        section.style.display = visibleCards.length === 0 && query ? 'none' : '';
+    });
+}
+
+    
+        // ===== Performance Report Chart.js Logic =====
+        const expData = {
+        "exp4_q4_sprint": {
+            "qwen-35b-q4": {
+                "background": 31.05,
+                "foreground": 35.02
+            },
+            "ornith-35b-q4": {
+                "background": 22.79,
+                "foreground": 27.43
+            }
+        },
+    "exp1_context_tps": {
+        "qwen-35b-q4": [
+            {
+                "context_size": 512,
+                "tps": 25.22682601480696,
+                "ttft_ms": 2830.4383754730225,
+                "accept_rate": null
+            },
+            {
+                "context_size": 1024,
+                "tps": 25.09375649673129,
+                "ttft_ms": 2940.1350021362305,
+                "accept_rate": null
+            },
+            {
+                "context_size": 2048,
+                "tps": 25.753121476429225,
+                "ttft_ms": 2825.8121013641357,
+                "accept_rate": null
+            },
+            {
+                "context_size": 4096,
+                "tps": 26.973413559003472,
+                "ttft_ms": 2845.928192138672,
+                "accept_rate": null
+            },
+            {
+                "context_size": 8192,
+                "tps": 24.945426767125827,
+                "ttft_ms": 2775.627851486206,
+                "accept_rate": null
+            },
+            {
+                "context_size": 16384,
+                "tps": 27.204582730234012,
+                "ttft_ms": 2801.154136657715,
+                "accept_rate": null
+            },
+            {
+                "context_size": 32768,
+                "tps": 26.65554678782339,
+                "ttft_ms": 2779.7772884368896,
+                "accept_rate": null
+            }
+        ],
+        "qwen-35b-q3": [
+            {
+                "context_size": 512,
+                "tps": 24.451704714317952,
+                "ttft_ms": 3076.780080795288,
+                "accept_rate": null
+            },
+            {
+                "context_size": 1024,
+                "tps": 23.20383374857455,
+                "ttft_ms": 3041.200637817383,
+                "accept_rate": null
+            },
+            {
+                "context_size": 2048,
+                "tps": 25.23997447899375,
+                "ttft_ms": 2985.27193069458,
+                "accept_rate": null
+            },
+            {
+                "context_size": 4096,
+                "tps": 26.842633112339303,
+                "ttft_ms": 3030.1332473754883,
+                "accept_rate": null
+            },
+            {
+                "context_size": 8192,
+                "tps": 26.812800399262382,
+                "ttft_ms": 3001.2950897216797,
+                "accept_rate": null
+            },
+            {
+                "context_size": 16384,
+                "tps": 22.94630810230456,
+                "ttft_ms": 2969.268560409546,
+                "accept_rate": null
+            },
+            {
+                "context_size": 32768,
+                "tps": 25.578807602166187,
+                "ttft_ms": 2985.386371612549,
+                "accept_rate": null
+            }
+        ],
+        "ornith-35b-q4": [
+            {
+                "context_size": 512,
+                "tps": 24.192257065584894,
+                "ttft_ms": 3104.1347980499268,
+                "accept_rate": null
+            },
+            {
+                "context_size": 1024,
+                "tps": 24.1613870599709,
+                "ttft_ms": 2791.3546562194824,
+                "accept_rate": null
+            },
+            {
+                "context_size": 2048,
+                "tps": 25.02897162031898,
+                "ttft_ms": 3023.240327835083,
+                "accept_rate": null
+            },
+            {
+                "context_size": 4096,
+                "tps": 25.01764736613725,
+                "ttft_ms": 2986.9744777679443,
+                "accept_rate": null
+            },
+            {
+                "context_size": 8192,
+                "tps": 24.480836897524917,
+                "ttft_ms": 2802.4044036865234,
+                "accept_rate": null
+            },
+            {
+                "context_size": 16384,
+                "tps": 23.318827120121842,
+                "ttft_ms": 2790.5805110931396,
+                "accept_rate": null
+            },
+            {
+                "context_size": 32768,
+                "tps": 23.92121770792577,
+                "ttft_ms": 2835.679769515991,
+                "accept_rate": null
+            }
+        ],
+        "ornith-35b-q3": [
+            {
+                "context_size": 512,
+                "tps": 21.848312544712048,
+                "ttft_ms": 3023.613929748535,
+                "accept_rate": null
+            },
+            {
+                "context_size": 1024,
+                "tps": 20.958564658097526,
+                "ttft_ms": 3272.956132888794,
+                "accept_rate": null
+            },
+            {
+                "context_size": 2048,
+                "tps": 20.437409359989335,
+                "ttft_ms": 3237.8551959991455,
+                "accept_rate": null
+            },
+            {
+                "context_size": 4096,
+                "tps": 21.959260214471684,
+                "ttft_ms": 3023.8518714904785,
+                "accept_rate": null
+            },
+            {
+                "context_size": 8192,
+                "tps": 21.121611872183788,
+                "ttft_ms": 3222.8095531463623,
+                "accept_rate": null
+            },
+            {
+                "context_size": 16384,
+                "tps": 21.612289074610185,
+                "ttft_ms": 3279.930353164673,
+                "accept_rate": null
+            },
+            {
+                "context_size": 32768,
+                "tps": 20.969019523450797,
+                "ttft_ms": 3228.142738342285,
+                "accept_rate": null
+            }
+        ]
+    },
+    "exp2_mtp_window": {
+        "qwen-35b-q4": {
+            "2048": [
+                {
+                    "n_max": 0,
+                    "tps": 24.59489346848387,
+                    "ttft_ms": 2258.8016986846924,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 2,
+                    "tps": 25.721334776070414,
+                    "ttft_ms": 2280.0424098968506,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 3,
+                    "tps": 24.237309950751595,
+                    "ttft_ms": 2250.7176399230957,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 4,
+                    "tps": 17.382993222922146,
+                    "ttft_ms": 2262.373924255371,
+                    "accept_rate": null
+                }
+            ],
+            "32768": [
+                {
+                    "n_max": 0,
+                    "tps": 27.616321209468065,
+                    "ttft_ms": 2213.512420654297,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 2,
+                    "tps": 25.76099118273313,
+                    "ttft_ms": 2236.258029937744,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 3,
+                    "tps": 24.308495765672422,
+                    "ttft_ms": 2261.3778114318848,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 4,
+                    "tps": 23.348700473913446,
+                    "ttft_ms": 2243.0267333984375,
+                    "accept_rate": null
+                }
+            ]
+        },
+        "qwen-35b-q3": {
+            "2048": [
+                {
+                    "n_max": 0,
+                    "tps": 25.840815179640966,
+                    "ttft_ms": 2292.6013469696045,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 2,
+                    "tps": 26.89559687840015,
+                    "ttft_ms": 2254.148006439209,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 3,
+                    "tps": 24.763228165147662,
+                    "ttft_ms": 2257.0836544036865,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 4,
+                    "tps": 19.834807137433238,
+                    "ttft_ms": 2241.2502765655518,
+                    "accept_rate": null
+                }
+            ],
+            "32768": [
+                {
+                    "n_max": 0,
+                    "tps": 23.689467348461786,
+                    "ttft_ms": 2272.5579738616943,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 2,
+                    "tps": 25.147724209833537,
+                    "ttft_ms": 2277.784824371338,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 3,
+                    "tps": 23.05012273226306,
+                    "ttft_ms": 2238.56258392334,
+                    "accept_rate": null
+                },
+                {
+                    "n_max": 4,
+                    "tps": 20.89460318574506,
+                    "ttft_ms": 2310.0976943969727,
+                    "accept_rate": null
+                }
+            ]
+        }
+    },
+    "exp3_gpu_expert_offload": {
+        "qwen-35b-q4": [
+            {
+                "ngl": 0,
+                "tps": 6.398159586393853,
+                "ttft_ms": 3282.147169113159,
+                "fallback": false
+            },
+            {
+                "ngl": 1,
+                "tps": 8.457962099147995,
+                "ttft_ms": 3213.576316833496,
+                "fallback": true
+            }
+        ],
+        "qwen-35b-q3": [
+            {
+                "ngl": 0,
+                "tps": 7.274481401344995,
+                "ttft_ms": 3503.7834644317627,
+                "fallback": false
+            },
+            {
+                "ngl": 1,
+                "tps": 8.325039504381838,
+                "ttft_ms": 3396.4767456054688,
+                "fallback": true
+            }
+        ],
+        "ornith-35b-q4": [
+            {
+                "ngl": 0,
+                "tps": 7.629691413350348,
+                "ttft_ms": 3026.272773742676,
+                "fallback": false
+            },
+            {
+                "ngl": 1,
+                "tps": 9.1239047691079,
+                "ttft_ms": 2972.2111225128174,
+                "fallback": true
+            }
+        ],
+        "ornith-35b-q3": [
+            {
+                "ngl": 0,
+                "tps": 7.998790827909903,
+                "ttft_ms": 3462.909698486328,
+                "fallback": false
+            },
+            {
+                "ngl": 1,
+                "tps": 9.208744322361134,
+                "ttft_ms": 3352.458715438843,
+                "fallback": true
+            }
+        ]
+    }
+};
+        
+        function initReportCharts() {
+            if (typeof Chart === 'undefined') {
+                console.warn("Chart.js is not defined. Skipping interactive charts initialization.");
+                return;
+            }
+            
+            // ===== Chart 1: Context Size vs TPS =====
+            const ctx1 = document.getElementById('contextTpsChart');
+            if (ctx1) {
+                const labels = [512, 1024, 2048, 4096, 8192, 16384, 32768];
+                const datasets = [];
+                const colors = {
+                    'qwen-35b-q4': '#0ea5e9',
+                    'qwen-35b-q3': '#10b981',
+                    'ornith-35b-q4': '#06b6d4',
+                    'ornith-35b-q3': '#10b981'
+                };
+                const legends = {
+                    'qwen-35b-q4': 'Qwen3.6 35B Q4_K_M (MTP)',
+                    'qwen-35b-q3': 'Qwen3.6 35B Q3_K_M (MTP)',
+                    'ornith-35b-q4': 'Ornith-1.0 35B Q4_K_M',
+                    'ornith-35b-q3': 'Ornith-1.0 35B IQ3_M'
+                };
+
+                for (const modelKey in expData.exp1_context_tps) {
+                    const modelData = expData.exp1_context_tps[modelKey];
+                    const tpsData = modelData.map(item => item.tps);
+                    datasets.push({
+                        label: legends[modelKey] || modelKey,
+                        data: tpsData,
+                        borderColor: colors[modelKey] || '#ffffff',
+                        backgroundColor: (colors[modelKey] || '#ffffff') + '1a',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.15
+                    });
+                }
+
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e8e8ef', font: { family: 'Noto Sans TC', size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw.toFixed(2) + ' t/s';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3', font: { family: 'JetBrains Mono' } },
+                                title: { display: true, text: 'Context Window Size (Tokens)', color: '#8b8ba3' }
+                            },
+                            y: {
+                                min: 15,
+                                max: 32,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3' },
+                                title: { display: true, text: 'Tokens Per Second (TPS)', color: '#8b8ba3' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // ===== Chart 2: MTP Window vs TPS =====
+            const ctx2 = document.getElementById('mtpWindowChart');
+            if (ctx2) {
+                const q4Data = expData.exp2_mtp_window['qwen-35b-q4']['2048'].map(item => item.tps);
+                const q3Data = expData.exp2_mtp_window['qwen-35b-q3']['2048'].map(item => item.tps);
+                
+                new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['MTP OFF', 'n_max = 2', 'n_max = 3', 'n_max = 4'],
+                        datasets: [
+                            {
+                                label: 'Qwen3.6 35B Q4_K_M (2K)',
+                                data: q4Data,
+                                backgroundColor: '#0ea5e9aa',
+                                borderColor: '#0ea5e9',
+                                borderWidth: 1,
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Qwen3.6 35B Q3_K_M (2K)',
+                                data: q3Data,
+                                backgroundColor: '#10b981aa',
+                                borderColor: '#10b981',
+                                borderWidth: 1,
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e8e8ef', font: { family: 'Noto Sans TC', size: 11 } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3' }
+                            },
+                            y: {
+                                min: 10,
+                                max: 30,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3' },
+                                title: { display: true, text: 'Tokens Per Second (TPS)', color: '#8b8ba3' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // ===== Chart 3: Override vs Offload PK =====
+            const ctx3 = document.getElementById('offloadPkChart');
+            if (ctx3) {
+                const q4Override = expData.exp1_context_tps['qwen-35b-q4'][0].tps;
+                const q4PureCpu = expData.exp3_gpu_expert_offload['qwen-35b-q4'][0].tps;
+                const q4Offload = expData.exp3_gpu_expert_offload['qwen-35b-q4'][1].tps;
+                
+                const q3Override = expData.exp1_context_tps['qwen-35b-q3'][0].tps;
+                const q3PureCpu = expData.exp3_gpu_expert_offload['qwen-35b-q3'][0].tps;
+                const q3Offload = expData.exp3_gpu_expert_offload['qwen-35b-q3'][1].tps;
+                
+                const ornithOverride = expData.exp1_context_tps['ornith-35b-q4'][0].tps;
+                const ornithPureCpu = expData.exp3_gpu_expert_offload['ornith-35b-q4'][0].tps;
+                const ornithOffload = expData.exp3_gpu_expert_offload['ornith-35b-q4'][1].tps;
+
+                new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: [
+                            'Qwen3.6 35B Q4_K_M',
+                            'Qwen3.6 35B Q3_K_M',
+                            'Ornith-1.0 35B Q4_K_M'
+                        ],
+                        datasets: [
+                            {
+                                label: '純 CPU 推理 (Dense & Expert in CPU, ngl=0)',
+                                data: [q4PureCpu, q3PureCpu, ornithPureCpu],
+                                backgroundColor: 'rgba(244, 63, 94, 0.4)',
+                                borderColor: '#f43f5e',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'GPU 部分專家卸載 (ngl=1, VRAM 溢出 Fallback)',
+                                data: [q4Offload, q3Offload, ornithOffload],
+                                backgroundColor: 'rgba(245, 158, 11, 0.4)',
+                                borderColor: '#f59e0b',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            },
+                            {
+                                label: '滿血 CPU Override 模式 (Dense 100% GPU, Expert 100% CPU)',
+                                data: [q4Override, q3Override, ornithOverride],
+                                backgroundColor: 'rgba(16, 185, 129, 0.65)',
+                                borderColor: '#10b981',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e8e8ef', font: { family: 'Noto Sans TC', size: 11 } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3' }
+                            },
+                            y: {
+                                min: 0,
+                                max: 32,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3' },
+                                title: { display: true, text: 'Tokens Per Second (TPS)', color: '#8b8ba3' }
+                            }
+                        }
+                    }
+                });
+            }
+        
+            
+            // ===== Chart 4: Q4 Sprint & Scheduling Bonus =====
+            const ctx4 = document.getElementById('q4SprintChart');
+            if (ctx4) {
+                new Chart(ctx4, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Qwen3.6 35B Q4_K_M', 'Ornith-1.0 35B Q4_K_M'],
+                        datasets: [
+                            {
+                                label: '背景背景執行 (start /b)',
+                                data: [
+                                    expData.exp4_q4_sprint['qwen-35b-q4'].background,
+                                    expData.exp4_q4_sprint['ornith-35b-q4'].background
+                                ],
+                                backgroundColor: 'rgba(14, 165, 233, 0.4)',
+                                borderColor: '#0ea5e9',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            },
+                            {
+                                label: '前台獨立視窗 (start /high)',
+                                data: [
+                                    expData.exp4_q4_sprint['qwen-35b-q4'].foreground,
+                                    expData.exp4_q4_sprint['ornith-35b-q4'].foreground
+                                ],
+                                backgroundColor: 'rgba(16, 185, 129, 0.65)',
+                                borderColor: '#10b981',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e8e8ef', font: { family: 'Noto Sans TC', size: 11 } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3' }
+                            },
+                            y: {
+                                min: 0,
+                                max: 35,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#8b8ba3' },
+                                title: { display: true, text: 'Tokens Per Second (TPS)', color: '#8b8ba3' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        </script>
+</body>
+</html>

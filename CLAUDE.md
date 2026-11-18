@@ -46,9 +46,8 @@
   - `rebuild-bat-files.py` — 讀取 JSON 並重建批次檔工具
   - `setup-environment.py` — 開機自動環境診斷與引擎下載工具
 - `tasks/` — 開發進度與計畫規劃
-  - `todo.md` — 開發進度清單
+  - `todo.md` — 交接現況與待辦（≤100 行）
   - `lessons.md` — 調優教訓總結
-- `CONTEXT.md` — 下一代 AI Agent 接手交接文件
 - `AGENTS.md` — AI Agent 後續協作開發指引與硬體調優速查
 - `README.md` — 本專案說明檔
 

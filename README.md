@@ -89,7 +89,7 @@ python scratch/auto-tune-hyperparams.py
 
 > [!IMPORTANT]
 > **💡 AI 代理人協作與自訂硬體提示**：
-> 本專案中的 [AGENTS.md](file:///D:/Workbench/AI_inference/Qwen-35BA3B-RTX3070Ti/AGENTS.md)、[CLAUDE.md](file:///D:/Workbench/AI_inference/Qwen-35BA3B-RTX3070Ti/CLAUDE.md)、[CONTEXT.md](file:///D:/Workbench/AI_inference/Qwen-35BA3B-RTX3070Ti/CONTEXT.md) 以及 [tasks/](file:///D:/Workbench/AI_inference/Qwen-35BA3B-RTX3070Ti/tasks/) **本質上是為後續協作的 AI 代理人（AI Agent）準備的上下文與規範指南**。
+> 本專案中的 [AGENTS.md](file:///D:/Workbench/AI_inference/Qwen-35BA3B-RTX3070Ti/AGENTS.md)、[CLAUDE.md](file:///D:/Workbench/AI_inference/Qwen-35BA3B-RTX3070Ti/CLAUDE.md) 以及 [tasks/](file:///D:/Workbench/AI_inference/Qwen-35BA3B-RTX3070Ti/tasks/) **本質上是為後續協作的 AI 代理人（AI Agent）準備的上下文與規範指南**。
 > 當您在自己的電腦上執行完自適應調參並獲得自訂硬體的數據後，**請務必依您的真實配置更新這些文件**。這能讓接手的 AI 代理在讀取專案時，精確掌握您本地的實體核心數、顯存餘額與實測 TPS 限度，避免 AI 因載入過時上下文而做出錯誤的推理優化決策！
 
 
